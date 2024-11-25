@@ -496,21 +496,119 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         return false;
     };
 
+    // Add image loading capability to the node
+    const originalDrawBackground = node.onDrawBackground;
+    node.onDrawBackground = function(ctx) {
+        if (originalDrawBackground) {
+            originalDrawBackground.apply(this, arguments);
+        }
+
+        // Only attempt to draw if glamour is active for this node
+        if (glamourStates.get(this.id)) {
+            loadGlamourImage(this, ctx);
+        }
+    };
+
     return widget;
 }
 
 function getGlamourImageUrl(image_id, node_type) {
-    const snakeCase = str => str.toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/[-\s]+/g, '_');
-        
+    console.log('Attempting to load glamour image:', {
+        image_id,
+        node_type
+    });
+    
     // Try specific image first
-    const specificUrl = `output/Glamour/${image_id}.png`;
+    const specificUrl = `/view?filename=${encodeURIComponent(image_id)}.png&type=output&subfolder=Glamour`;
+    console.log('Trying specific URL:', specificUrl);
     
-    // Also prepare fallback URL
-    const fallbackUrl = `output/Glamour/${snakeCase(node_type)}.png`;
+    // Also prepare fallback URLs using the same pattern
+    const nodeIdUrl = `/view?filename=${encodeURIComponent(image_id.split('_').slice(0, 2).join('_'))}.png&type=output&subfolder=Glamour`;
+    const fallbackUrl = `/view?filename=${encodeURIComponent(snakeCase(node_type))}.png&type=output&subfolder=Glamour`;
     
-    return { specificUrl, fallbackUrl };
+    console.log('Fallback URLs:', {
+        nodeIdUrl,
+        fallbackUrl
+    });
+    
+    return { specificUrl, nodeIdUrl, fallbackUrl };
+}
+
+// Image loading queue management
+const imageLoadQueue = new Map(); // node.id -> {loading: boolean, urls: string[], currentIndex: number}
+
+function loadGlamourImage(node, ctx) {
+    const nodeId = node.id;
+    
+    // If already loading, skip
+    if (imageLoadQueue.get(nodeId)?.loading) {
+        return;
+    }
+
+    const nodeTypeSnake = snakeCase(node.type);
+    const nodeHash = generateNodeHash(node);
+    const imageId = `${nodeTypeSnake}_${nodeId}_${nodeHash}`;
+    
+    const { specificUrl, nodeIdUrl, fallbackUrl } = getGlamourImageUrl(imageId, node.type);
+    const urls = [specificUrl, nodeIdUrl, fallbackUrl];
+
+    // Initialize or update queue entry
+    const queueEntry = imageLoadQueue.get(nodeId) || {
+        loading: true,
+        urls,
+        currentIndex: 0,
+        image: new Image()
+    };
+    
+    imageLoadQueue.set(nodeId, queueEntry);
+    
+    queueEntry.image.onerror = () => {
+        console.log('Failed to load:', urls[queueEntry.currentIndex]);
+        queueEntry.currentIndex++;
+        if (queueEntry.currentIndex < urls.length) {
+            console.log('Trying next URL:', urls[queueEntry.currentIndex]);
+            queueEntry.image.src = urls[queueEntry.currentIndex];
+        } else {
+            queueEntry.loading = false;
+        }
+    };
+    
+    queueEntry.image.onload = () => {
+        console.log('Successfully loaded:', queueEntry.image.src);
+        queueEntry.loading = false;
+        
+        // Draw the image maintaining aspect ratio
+        const scale = Math.min(
+            node.size[0] / queueEntry.image.width,
+            node.size[1] / queueEntry.image.height
+        );
+        
+        const width = queueEntry.image.width * scale;
+        const height = queueEntry.image.height * scale;
+        const x = (node.size[0] - width) / 2;
+        const y = (node.size[1] - height) / 2;
+        
+        ctx.drawImage(queueEntry.image, x, y, width, height);
+        app.graph.setDirtyCanvas(true);
+    };
+    
+    console.log('Starting image load with:', urls[queueEntry.currentIndex]);
+    queueEntry.image.src = urls[queueEntry.currentIndex];
+}
+
+// Update the node's onDrawBackground to use the queue system
+function addGlamourImageSupport(node) {
+    const originalDrawBackground = node.onDrawBackground;
+    node.onDrawBackground = function(ctx) {
+        if (originalDrawBackground) {
+            originalDrawBackground.apply(this, arguments);
+        }
+
+        // Only attempt to draw if glamour is active for this node
+        if (glamourStates.get(this.id)) {
+            loadGlamourImage(this, ctx);
+        }
+    };
 }
 
 app.registerExtension({
@@ -524,6 +622,7 @@ app.registerExtension({
             const glamourWidget = createGlamourOverlay(node, node.name, {}, app);
             if (glamourWidget) {
                 node.addCustomWidget(glamourWidget);
+                addGlamourImageSupport(node);  // Add image support
             }
         });
         
@@ -535,6 +634,7 @@ app.registerExtension({
                 const glamourWidget = createGlamourOverlay(node, node.name, {}, app);
                 if (glamourWidget) {
                     node.addCustomWidget(glamourWidget);
+                    addGlamourImageSupport(node);  // Add image support
                 }
             }
             return result;
@@ -558,22 +658,42 @@ app.registerExtension({
             nodeType.prototype.onDrawBackground = function(ctx) {
                 onDrawBackground?.apply(this, arguments);
                 
-                if (this.widgets[1].value) {  // Check if we have an image_id
-                    const { specificUrl, fallbackUrl } = getGlamourImageUrl(this.widgets[1].value, this.type);
+                if (this.widgets[1]?.value) {  // Check if we have an image_id
+                    const { specificUrl, nodeIdUrl, fallbackUrl } = getGlamourImageUrl(this.widgets[1].value, this.type);
                     
-                    // Load and try both URLs
+                    // Load and try all URLs in sequence
                     const img = new Image();
-                    img.onerror = () => {
-                        // If specific image fails, try fallback
-                        img.src = fallbackUrl;
-                    };
-                    img.src = specificUrl;
+                    let currentUrlIndex = 0;
+                    const urls = [specificUrl, nodeIdUrl, fallbackUrl];
                     
-                    // Use the image once loaded
-                    img.onload = () => {
-                        // Your image drawing code here
-                        // Remember to maintain aspect ratio
+                    img.onerror = () => {
+                        console.log('Failed to load:', urls[currentUrlIndex]);
+                        currentUrlIndex++;
+                        if (currentUrlIndex < urls.length) {
+                            console.log('Trying next URL:', urls[currentUrlIndex]);
+                            img.src = urls[currentUrlIndex];
+                        }
                     };
+                    
+                    img.onload = () => {
+                        console.log('Successfully loaded:', img.src);
+                        // Draw the image maintaining aspect ratio
+                        const scale = Math.min(
+                            this.size[0] / img.width,
+                            this.size[1] / img.height
+                        );
+                        
+                        const width = img.width * scale;
+                        const height = img.height * scale;
+                        const x = (this.size[0] - width) / 2;
+                        const y = (this.size[1] - height) / 2;
+                        
+                        ctx.drawImage(img, x, y, width, height);
+                        this.setDirtyCanvas(true);
+                    };
+                    
+                    console.log('Starting image load with:', urls[0]);
+                    img.src = urls[0];
                 }
             };
         }
