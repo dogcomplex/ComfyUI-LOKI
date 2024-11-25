@@ -133,7 +133,7 @@ function generateNodeHash(node) {
     });
     
     // Debug log to see what's being hashed
-    console.log('Hashing content for node:', node.type, contentStr);
+    // console.log('Hashing content for node:', node.type, contentStr);
     
     // Use a more robust hashing algorithm
     let hash = 0;
@@ -144,7 +144,7 @@ function generateNodeHash(node) {
     }
     
     const finalHash = Math.abs(hash).toString(16).padStart(8, '0');
-    console.log('Generated hash:', finalHash);
+    // console.log('Generated hash:', finalHash);
     
     return finalHash;
 }
@@ -188,32 +188,30 @@ function createGlamourOverlay(node, inputName, inputData, app) {
                 ">❌</button>
             </div>`;
         
-        // Add widget values section (skip for Glamour node)
-        if (node.type !== "Glamour 🦊") {
-            const widgets = node.widgets || [];
-            if (widgets.length) {
-                content += '<div class="section"><h4>🎛️ Values</h4>';
-                widgets.forEach(widget => {
-                    if (widget.type === "button" || widget.type === "glamour") return;
-                    content += `
-                        <div class="widget-input">
-                            <label>🔹 ${widget.name}: </label>
-                            <input type="text" 
-                                class="glamour-input" 
-                                data-widget="${widget.name}"
-                                value="${widget.value || ''}"
-                                style="
-                                    background: rgba(255,255,255,0.9);
-                                    border: 1px solid #ccc;
-                                    border-radius: 4px;
-                                    padding: 2px 5px;
-                                    margin-left: 5px;
-                                "
-                            />
-                        </div>`;
-                });
-                content += '</div>';
-            }
+        // Add widget values section (removed Glamour node check)
+        const widgets = node.widgets || [];
+        if (widgets.length) {
+            content += '<div class="section"><h4>🎛️ Values</h4>';
+            widgets.forEach(widget => {
+                if (widget.type === "button" || widget.type === "glamour") return;
+                content += `
+                    <div class="widget-input">
+                        <label>🔹 ${widget.name}: </label>
+                        <input type="text" 
+                            class="glamour-input" 
+                            data-widget="${widget.name}"
+                            value="${widget.value || ''}"
+                            style="
+                                background: rgba(255,255,255,0.9);
+                                border: 1px solid #ccc;
+                                border-radius: 4px;
+                                padding: 2px 5px;
+                                margin-left: 5px;
+                            "
+                        />
+                    </div>`;
+            });
+            content += '</div>';
         }
         
         return content;
@@ -361,40 +359,38 @@ function createGlamourOverlay(node, inputName, inputData, app) {
     // Create the overlay with enhanced event handling
     const overlay = $el("div.glamour-overlay", {
         innerHTML: `
-            <div style="
-                background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            <div class="glamour-content" style="
+                position: relative;
                 padding: 20px;
                 border-radius: 10px;
                 box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-                animation: glamourPulse 2s infinite;
                 box-sizing: border-box;
+                height: 100%;
             ">
+                <div class="glamour-image" style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 10px;
+                    z-index: 0;
+                    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96c93d);
+                    background-size: 400% 400%;
+                    animation: gradientBG 15s ease infinite;
+                "></div>
                 <div style="
-                    background: rgba(255,255,255,0.9);
+                    position: relative;
+                    background: rgba(255,255,255,0.85);
                     padding: 15px;
                     border-radius: 8px;
                     text-align: left;
                     box-sizing: border-box;
+                    z-index: 1;
                 ">
                     ${createNodeContent()}
                 </div>
             </div>
-            <style>
-                @keyframes glamourPulse {
-                    0% { transform: scale(1); }
-                    50% { transform: scale(1.05); }
-                    100% { transform: scale(1); }
-                }
-                .section {
-                    margin: 10px 0;
-                    padding: 5px 0;
-                    border-top: 1px solid rgba(0,0,0,0.1);
-                }
-                .section h4 {
-                    margin: 0 0 5px 0;
-                    color: #444;
-                }
-            </style>
         `,
         onclick: (e) => {
             if (e.target.classList.contains('glamour-toggle')) {
@@ -416,6 +412,9 @@ function createGlamourOverlay(node, inputName, inputData, app) {
             }
         }
     });
+
+    // Make sure to set the data-node-id attribute
+    overlay.setAttribute('data-node-id', node.id);
 
     // Add observer for widget value changes in parent node
     const originalSetValue = node.setPropertyValue;
@@ -537,24 +536,42 @@ function getGlamourImageUrl(image_id, node_type) {
 // Image loading queue management
 const imageLoadQueue = new Map(); // node.id -> {loading: boolean, urls: string[], currentIndex: number}
 
+// Cache for loaded images
+const glamourImageCache = new Map(); // nodeId -> {hash: string, image: Image}
+
 function loadGlamourImage(node, ctx) {
     const nodeId = node.id;
+    const nodeHash = generateNodeHash(node);
     
-    // If already loading, skip
-    if (imageLoadQueue.get(nodeId)?.loading) {
+    // Check cache first
+    const cached = glamourImageCache.get(nodeId);
+    if (cached && cached.hash === nodeHash) {
+        // Draw cached image
+        drawGlamourImage(cached.image, node, ctx);
+        return;
+    }
+    
+    // If already loading this hash, skip
+    if (imageLoadQueue.get(nodeId)?.loading && imageLoadQueue.get(nodeId)?.hash === nodeHash) {
         return;
     }
 
     const nodeTypeSnake = snakeCase(node.type);
-    const nodeHash = generateNodeHash(node);
     const imageId = `${nodeTypeSnake}_${nodeId}_${nodeHash}`;
+    
+    console.log('Loading new image for node:', {
+        nodeId,
+        hash: nodeHash,
+        cached: !!cached
+    });
     
     const { specificUrl, nodeIdUrl, fallbackUrl } = getGlamourImageUrl(imageId, node.type);
     const urls = [specificUrl, nodeIdUrl, fallbackUrl];
 
     // Initialize or update queue entry
-    const queueEntry = imageLoadQueue.get(nodeId) || {
+    const queueEntry = {
         loading: true,
+        hash: nodeHash,
         urls,
         currentIndex: 0,
         image: new Image()
@@ -570,6 +587,9 @@ function loadGlamourImage(node, ctx) {
             queueEntry.image.src = urls[queueEntry.currentIndex];
         } else {
             queueEntry.loading = false;
+            imageLoadQueue.delete(nodeId);
+            // Reset to rainbow background if all image loads fail
+            resetToRainbowBackground(nodeId);
         }
     };
     
@@ -577,37 +597,149 @@ function loadGlamourImage(node, ctx) {
         console.log('Successfully loaded:', queueEntry.image.src);
         queueEntry.loading = false;
         
-        // Draw the image maintaining aspect ratio
-        const scale = Math.min(
-            node.size[0] / queueEntry.image.width,
-            node.size[1] / queueEntry.image.height
-        );
+        // Cache the successfully loaded image
+        glamourImageCache.set(nodeId, {
+            hash: nodeHash,
+            image: queueEntry.image
+        });
         
-        const width = queueEntry.image.width * scale;
-        const height = queueEntry.image.height * scale;
-        const x = (node.size[0] - width) / 2;
-        const y = (node.size[1] - height) / 2;
+        // Draw the image
+        drawGlamourImage(queueEntry.image, node, ctx);
         
-        ctx.drawImage(queueEntry.image, x, y, width, height);
-        app.graph.setDirtyCanvas(true);
+        // Clean up queue
+        imageLoadQueue.delete(nodeId);
     };
     
     console.log('Starting image load with:', urls[queueEntry.currentIndex]);
     queueEntry.image.src = urls[queueEntry.currentIndex];
 }
 
-// Update the node's onDrawBackground to use the queue system
+function drawGlamourImage(img, node, ctx) {
+    // Save context state
+    ctx.save();
+    
+    // Calculate dimensions maintaining aspect ratio
+    const scale = Math.min(
+        node.size[0] / img.width,
+        node.size[1] / img.height
+    );
+    
+    const width = img.width * scale;
+    const height = img.height * scale;
+    const x = (node.size[0] - width) / 2;
+    const y = (node.size[1] - height) / 2;
+    
+    // Clear the background where the image will be
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fillRect(x, y, width, height);
+    
+    // Reset composite operation for drawing the image
+    ctx.globalCompositeOperation = 'source-over';
+    
+    // Add slight glow effect
+    ctx.shadowColor = 'rgba(255,255,255,0.2)';
+    ctx.shadowBlur = 10;
+    
+    // Draw the image
+    ctx.drawImage(img, x, y, width, height);
+    
+    // Restore context state
+    ctx.restore();
+    
+    // Mark canvas as dirty
+    app.graph.setDirtyCanvas(true, true);
+
+    console.log('Drawing glamour image:', {
+        src: img.src,
+        nodeId: node.id,
+        loaded: img.complete
+    });
+
+    // Update the overlay image
+    const overlayImage = document.querySelector(`[data-node-id="${node.id}"] .glamour-image`);
+    if (overlayImage) {
+        console.log('Found overlay element:', overlayImage);
+        
+        // First, clear all background-related styles
+        const stylesToClear = [
+            'background',
+            'backgroundImage',
+            'backgroundSize',
+            'backgroundPosition',
+            'backgroundRepeat',
+            'animation'
+        ];
+        
+        stylesToClear.forEach(style => {
+            overlayImage.style[style] = '';
+        });
+        
+        // Then set the new styles
+        const newStyles = {
+            backgroundImage: `url("${img.src}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+        };
+        
+        Object.assign(overlayImage.style, newStyles);
+        
+        console.log('Applied styles:', {
+            backgroundImage: overlayImage.style.backgroundImage,
+            backgroundSize: overlayImage.style.backgroundSize,
+            computedStyle: window.getComputedStyle(overlayImage).backgroundImage
+        });
+    } else {
+        console.warn('Overlay element not found for node:', node.id);
+    }
+    
+    // Mark canvas as dirty
+    app.graph.setDirtyCanvas(true, true);
+}
+
+// Add a function to reset to rainbow background if image load fails
+function resetToRainbowBackground(nodeId) {
+    const overlayImage = document.querySelector(`[data-node-id="${nodeId}"] .glamour-image`);
+    if (overlayImage) {
+        console.log('Resetting to rainbow background for node:', nodeId);
+        
+        // Clear all existing background styles
+        const stylesToClear = [
+            'background',
+            'backgroundImage',
+            'backgroundSize',
+            'backgroundPosition',
+            'backgroundRepeat'
+        ];
+        
+        stylesToClear.forEach(style => {
+            overlayImage.style[style] = '';
+        });
+        
+        // Set rainbow gradient
+        Object.assign(overlayImage.style, {
+            background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96c93d)',
+            backgroundSize: '400% 400%',
+            animation: 'gradientBG 15s ease infinite'
+        });
+    }
+}
+
+// Update the addGlamourImageSupport function
 function addGlamourImageSupport(node) {
     const originalDrawBackground = node.onDrawBackground;
     node.onDrawBackground = function(ctx) {
-        if (originalDrawBackground) {
-            originalDrawBackground.apply(this, arguments);
+        // Only draw original background if no glamour is active
+        if (!glamourStates.get(this.id)) {
+            if (originalDrawBackground) {
+                originalDrawBackground.apply(this, arguments);
+            }
+            return;
         }
-
-        // Only attempt to draw if glamour is active for this node
-        if (glamourStates.get(this.id)) {
-            loadGlamourImage(this, ctx);
-        }
+        
+        // If glamour is active, load and draw the image
+        loadGlamourImage(this, ctx);
     };
 }
 
@@ -646,56 +778,18 @@ app.registerExtension({
             
             nodeType.prototype.onNodeCreated = function() {
                 const result = onNodeCreated?.apply(this, arguments);
-                
-                // Add the node_id to the widget's values
-                this.widgets[0].value = this.id;
-                
                 return result;
-            };
-            
-            // Add custom rendering for the glamour overlay
-            const onDrawBackground = nodeType.prototype.onDrawBackground;
-            nodeType.prototype.onDrawBackground = function(ctx) {
-                onDrawBackground?.apply(this, arguments);
-                
-                if (this.widgets[1]?.value) {  // Check if we have an image_id
-                    const { specificUrl, nodeIdUrl, fallbackUrl } = getGlamourImageUrl(this.widgets[1].value, this.type);
-                    
-                    // Load and try all URLs in sequence
-                    const img = new Image();
-                    let currentUrlIndex = 0;
-                    const urls = [specificUrl, nodeIdUrl, fallbackUrl];
-                    
-                    img.onerror = () => {
-                        console.log('Failed to load:', urls[currentUrlIndex]);
-                        currentUrlIndex++;
-                        if (currentUrlIndex < urls.length) {
-                            console.log('Trying next URL:', urls[currentUrlIndex]);
-                            img.src = urls[currentUrlIndex];
-                        }
-                    };
-                    
-                    img.onload = () => {
-                        console.log('Successfully loaded:', img.src);
-                        // Draw the image maintaining aspect ratio
-                        const scale = Math.min(
-                            this.size[0] / img.width,
-                            this.size[1] / img.height
-                        );
-                        
-                        const width = img.width * scale;
-                        const height = img.height * scale;
-                        const x = (this.size[0] - width) / 2;
-                        const y = (this.size[1] - height) / 2;
-                        
-                        ctx.drawImage(img, x, y, width, height);
-                        this.setDirtyCanvas(true);
-                    };
-                    
-                    console.log('Starting image load with:', urls[0]);
-                    img.src = urls[0];
-                }
             };
         }
     }
 }); 
+
+// Make sure we have the gradient animation defined
+const style = document.createElement('style');
+style.textContent = `
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}`;
+document.head.appendChild(style); 
