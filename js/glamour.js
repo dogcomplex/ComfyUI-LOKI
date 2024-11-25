@@ -68,52 +68,72 @@ function snakeCase(str) {
 }
 
 function generateNodeHash(node) {
-    // Only collect stable properties that won't change between sessions
     const stableValues = {
         type: node.type,
         inputs: {},
-        widgets: {}
+        widgets: {},
+        connections: {}
     };
 
-    // Add input connection info
-    for (const [key, input] of Object.entries(node.inputs || {})) {
-        if (input.link != null) {
-            const linkedNode = node.graph._nodes.find(n => 
-                n.outputs && n.outputs.some(o => o.links && o.links.includes(input.link))
-            );
-            stableValues.inputs[key] = linkedNode ? `${linkedNode.type}_${linkedNode.id}` : null;
+    // Add ALL input values and connections
+    if (node.inputs) {
+        for (const [key, input] of Object.entries(node.inputs)) {
+            // Store the input value if it exists
+            if (input.value !== undefined) {
+                stableValues.inputs[key] = input.value;
+            }
+            
+            // Store connection information
+            if (input.link != null) {
+                const linkedNode = node.graph._nodes.find(n => 
+                    n.outputs && n.outputs.some(o => o.links && o.links.includes(input.link))
+                );
+                if (linkedNode) {
+                    stableValues.connections[key] = {
+                        nodeType: linkedNode.type,
+                        nodeId: linkedNode.id,
+                        linkId: input.link
+                    };
+                }
+            }
         }
     }
 
     // Add ALL widget values (except glamour widgets)
     if (node.widgets) {
         node.widgets.forEach(widget => {
-            // Skip glamour widgets and undefined values
-            if (widget.type !== "glamour" && widget.value !== undefined) {
-                // For text widgets, include the actual text value
-                if (widget.type === "text" || widget.type === "string") {
-                    stableValues.widgets[widget.name] = widget.value;
-                } else {
-                    // For other widget types, include both name and value
-                    stableValues.widgets[widget.name] = {
-                        type: widget.type,
-                        value: widget.value
-                    };
-                }
-            }
+            // Skip glamour widgets
+            if (widget.type === "glamour") return;
+            
+            // Store widget value and type
+            stableValues.widgets[widget.name] = {
+                type: widget.type,
+                value: widget.value,
+                // For combo widgets, store options too
+                options: widget.options,
+                // For number widgets, store min/max
+                min: widget.min,
+                max: widget.max
+            };
         });
     }
 
     // Create deterministic string with stable sorting
     const contentStr = JSON.stringify(stableValues, (key, value) => {
         if (value && typeof value === 'object') {
+            // Sort object keys
             return Object.keys(value).sort().reduce((sorted, key) => {
-                sorted[key] = value[key];
+                if (value[key] !== undefined && value[key] !== null) {
+                    sorted[key] = value[key];
+                }
                 return sorted;
             }, {});
         }
         return value;
     });
+    
+    // Debug log to see what's being hashed
+    console.log('Hashing content for node:', node.type, contentStr);
     
     // Use a more robust hashing algorithm
     let hash = 0;
@@ -123,7 +143,10 @@ function generateNodeHash(node) {
         hash = hash & hash; // Convert to 32-bit integer
     }
     
-    return Math.abs(hash).toString(16).padStart(8, '0');
+    const finalHash = Math.abs(hash).toString(16).padStart(8, '0');
+    console.log('Generated hash:', finalHash);
+    
+    return finalHash;
 }
 
 function createGlamourOverlay(node, inputName, inputData, app) {
@@ -147,7 +170,7 @@ function createGlamourOverlay(node, inputName, inputData, app) {
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <h3 style="margin: 0; color: #333;">✨ ${node.type} ✨</h3>
-                    <div style="
+                    <div class="node-hash" style="
                         font-size: 0.8em;
                         color: #666;
                         margin-top: 4px;
@@ -194,6 +217,39 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         }
         
         return content;
+    };
+
+    // Function to update hash display
+    const updateHashDisplay = (overlay) => {
+        const hashDisplay = overlay.querySelector('.node-hash');
+        if (hashDisplay) {
+            const nodeTypeSnake = snakeCase(node.type);
+            const newHash = generateNodeHash(node);
+            hashDisplay.textContent = `${nodeTypeSnake}_${node.id}_${newHash}`;
+        }
+    };
+
+    // Function to update input field value
+    const updateInputField = (widgetName, value) => {
+        const input = overlay.querySelector(`input[data-widget="${widgetName}"]`);
+        if (input && input.value !== value) {
+            input.value = value;
+            // Update hash after input field changes
+            updateHashDisplay(overlay);
+        }
+    };
+
+    // Function to update widget value
+    const updateWidgetValue = (widgetName, value) => {
+        const widget = node.widgets.find(w => w.name === widgetName);
+        if (widget && widget.value !== value) {
+            widget.value = value;
+            if (widget.callback) {
+                widget.callback(value);
+            }
+            // Update hash after widget value changes
+            updateHashDisplay(overlay);
+        }
     };
 
     const widget = {
@@ -302,7 +358,7 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         }
     };
 
-    // Create the overlay
+    // Create the overlay with enhanced event handling
     const overlay = $el("div.glamour-overlay", {
         innerHTML: `
             <div style="
@@ -350,16 +406,68 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         onchange: (e) => {
             if (e.target.classList.contains('glamour-input')) {
                 const widgetName = e.target.dataset.widget;
-                const widget = node.widgets.find(w => w.name === widgetName);
-                if (widget) {
-                    widget.value = e.target.value;
-                    if (widget.callback) {
-                        widget.callback(widget.value);
-                    }
-                }
+                const value = e.target.value;
+                
+                // Update widget value when input changes
+                updateWidgetValue(widgetName, value);
+                
+                // Update canvas
+                app.graph.setDirtyCanvas(true);
             }
         }
     });
+
+    // Add observer for widget value changes in parent node
+    const originalSetValue = node.setPropertyValue;
+    if (originalSetValue) {
+        node.setPropertyValue = function(name, value) {
+            const result = originalSetValue.call(this, name, value);
+            
+            // Update input field when widget changes
+            updateInputField(name, value);
+            
+            // Update canvas
+            app.graph.setDirtyCanvas(true);
+            return result;
+        };
+    }
+
+    // Add observer for widget value changes directly
+    node.widgets.forEach(widget => {
+        if (widget.type !== "glamour") {
+            const originalCallback = widget.callback;
+            widget.callback = function(value) {
+                if (originalCallback) {
+                    originalCallback.call(this, value);
+                }
+                
+                // Update input field when widget changes
+                updateInputField(widget.name, value);
+                
+                // Update canvas
+                app.graph.setDirtyCanvas(true);
+            };
+        }
+    });
+
+    // Add observer for input value changes
+    const originalOnInputChanged = node.onInputChanged;
+    node.onInputChanged = function() {
+        if (originalOnInputChanged) {
+            originalOnInputChanged.apply(this, arguments);
+        }
+        // Update hash when inputs change
+        updateHashDisplay(overlay);
+        app.graph.setDirtyCanvas(true);
+    };
+
+    // Initial sync of values and hash
+    node.widgets.forEach(widget => {
+        if (widget.type !== "glamour") {
+            updateInputField(widget.name, widget.value);
+        }
+    });
+    updateHashDisplay(overlay);
 
     widget.overlay = overlay;
     widget.parent = node;
