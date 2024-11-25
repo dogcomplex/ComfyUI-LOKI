@@ -77,7 +77,7 @@ function generateNodeHash(node) {
 
     // Add input connection info
     for (const [key, input] of Object.entries(node.inputs || {})) {
-        if (input.link != null) {  // Only include connected inputs
+        if (input.link != null) {
             const linkedNode = node.graph._nodes.find(n => 
                 n.outputs && n.outputs.some(o => o.links && o.links.includes(input.link))
             );
@@ -85,24 +85,45 @@ function generateNodeHash(node) {
         }
     }
 
-    // Add widget values (excluding glamour widgets)
-    (node.widgets || []).forEach(widget => {
-        if (widget.type !== "glamour" && widget.value !== undefined) {
-            stableValues.widgets[widget.name] = widget.value;
-        }
-    });
+    // Add ALL widget values (except glamour widgets)
+    if (node.widgets) {
+        node.widgets.forEach(widget => {
+            // Skip glamour widgets and undefined values
+            if (widget.type !== "glamour" && widget.value !== undefined) {
+                // For text widgets, include the actual text value
+                if (widget.type === "text" || widget.type === "string") {
+                    stableValues.widgets[widget.name] = widget.value;
+                } else {
+                    // For other widget types, include both name and value
+                    stableValues.widgets[widget.name] = {
+                        type: widget.type,
+                        value: widget.value
+                    };
+                }
+            }
+        });
+    }
 
-    // Create deterministic string
-    const contentStr = JSON.stringify(stableValues, Object.keys(stableValues).sort());
+    // Create deterministic string with stable sorting
+    const contentStr = JSON.stringify(stableValues, (key, value) => {
+        if (value && typeof value === 'object') {
+            return Object.keys(value).sort().reduce((sorted, key) => {
+                sorted[key] = value[key];
+                return sorted;
+            }, {});
+        }
+        return value;
+    });
     
-    // Use a more stable hashing algorithm
+    // Use a more robust hashing algorithm
     let hash = 0;
     for (let i = 0; i < contentStr.length; i++) {
-        hash = ((hash << 5) - hash) + contentStr.charCodeAt(i);
-        hash = hash & hash;
+        const char = contentStr.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
     }
     
-    return Math.abs(hash).toString(16).padStart(8, '0').slice(0, 8);
+    return Math.abs(hash).toString(16).padStart(8, '0');
 }
 
 function createGlamourOverlay(node, inputName, inputData, app) {
