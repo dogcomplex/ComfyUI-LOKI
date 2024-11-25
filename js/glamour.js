@@ -76,8 +76,16 @@ function createGlamourOverlay(node, inputName, inputData, app) {
     
     const createNodeContent = () => {
         let content = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0; color: #333;">✨ ${node.type} ✨</h3>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h3 style="margin: 0; color: #333;">✨ ${node.type} ✨</h3>
+                    <div style="
+                        font-size: 0.8em;
+                        color: #666;
+                        margin-top: 4px;
+                        font-family: monospace;
+                    ">${node.id}_${node.widgets?.[1]?.value || 'pending'}</div>
+                </div>
                 <button class="glamour-toggle" style="
                     background: none;
                     border: none;
@@ -312,7 +320,20 @@ function createGlamourOverlay(node, inputName, inputData, app) {
     return widget;
 }
 
-// Register extension
+function getGlamourImageUrl(image_id, node_type) {
+    const snakeCase = str => str.toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[-\s]+/g, '_');
+        
+    // Try specific image first
+    const specificUrl = `output/Glamour/${image_id}.png`;
+    
+    // Also prepare fallback URL
+    const fallbackUrl = `output/Glamour/${snakeCase(node_type)}.png`;
+    
+    return { specificUrl, fallbackUrl };
+}
+
 app.registerExtension({
     name: "Comfy.Glamour",
     async setup() {
@@ -339,5 +360,43 @@ app.registerExtension({
             }
             return result;
         };
+    },
+    async beforeRegisterNodeDef(nodeType, nodeData, app) {
+        if (nodeData.name === "Glamour 🦊") {
+            const onNodeCreated = nodeType.prototype.onNodeCreated;
+            
+            nodeType.prototype.onNodeCreated = function() {
+                const result = onNodeCreated?.apply(this, arguments);
+                
+                // Add the node_id to the widget's values
+                this.widgets[0].value = this.id;
+                
+                return result;
+            };
+            
+            // Add custom rendering for the glamour overlay
+            const onDrawBackground = nodeType.prototype.onDrawBackground;
+            nodeType.prototype.onDrawBackground = function(ctx) {
+                onDrawBackground?.apply(this, arguments);
+                
+                if (this.widgets[1].value) {  // Check if we have an image_id
+                    const { specificUrl, fallbackUrl } = getGlamourImageUrl(this.widgets[1].value, this.type);
+                    
+                    // Load and try both URLs
+                    const img = new Image();
+                    img.onerror = () => {
+                        // If specific image fails, try fallback
+                        img.src = fallbackUrl;
+                    };
+                    img.src = specificUrl;
+                    
+                    // Use the image once loaded
+                    img.onload = () => {
+                        // Your image drawing code here
+                        // Remember to maintain aspect ratio
+                    };
+                }
+            };
+        }
     }
 }); 
