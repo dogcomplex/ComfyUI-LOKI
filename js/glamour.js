@@ -61,6 +61,50 @@ function createGlobalControl() {
     updateGlobalControl();
 }
 
+function snakeCase(str) {
+    return str.toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[-\s]+/g, '_');
+}
+
+function generateNodeHash(node) {
+    // Only collect stable properties that won't change between sessions
+    const stableValues = {
+        type: node.type,
+        inputs: {},
+        widgets: {}
+    };
+
+    // Add input connection info
+    for (const [key, input] of Object.entries(node.inputs || {})) {
+        if (input.link != null) {  // Only include connected inputs
+            const linkedNode = node.graph._nodes.find(n => 
+                n.outputs && n.outputs.some(o => o.links && o.links.includes(input.link))
+            );
+            stableValues.inputs[key] = linkedNode ? `${linkedNode.type}_${linkedNode.id}` : null;
+        }
+    }
+
+    // Add widget values (excluding glamour widgets)
+    (node.widgets || []).forEach(widget => {
+        if (widget.type !== "glamour" && widget.value !== undefined) {
+            stableValues.widgets[widget.name] = widget.value;
+        }
+    });
+
+    // Create deterministic string
+    const contentStr = JSON.stringify(stableValues, Object.keys(stableValues).sort());
+    
+    // Use a more stable hashing algorithm
+    let hash = 0;
+    for (let i = 0; i < contentStr.length; i++) {
+        hash = ((hash << 5) - hash) + contentStr.charCodeAt(i);
+        hash = hash & hash;
+    }
+    
+    return Math.abs(hash).toString(16).padStart(8, '0').slice(0, 8);
+}
+
 function createGlamourOverlay(node, inputName, inputData, app) {
     // Skip if node already has a glamour
     if (node.widgets?.find(w => w.type === "glamour")) return;
@@ -75,6 +119,9 @@ function createGlamourOverlay(node, inputName, inputData, app) {
     const headerHeight = LiteGraph.NODE_TITLE_HEIGHT;
     
     const createNodeContent = () => {
+        const nodeTypeSnake = snakeCase(node.type);
+        const nodeHash = generateNodeHash(node);
+        
         let content = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -84,7 +131,8 @@ function createGlamourOverlay(node, inputName, inputData, app) {
                         color: #666;
                         margin-top: 4px;
                         font-family: monospace;
-                    ">${node.id}_${node.widgets?.[1]?.value || 'pending'}</div>
+                        word-break: break-all;
+                    ">${nodeTypeSnake}_${node.id}_${nodeHash}</div>
                 </div>
                 <button class="glamour-toggle" style="
                     background: none;
@@ -96,30 +144,32 @@ function createGlamourOverlay(node, inputName, inputData, app) {
                 ">❌</button>
             </div>`;
         
-        // Add widget values section
-        const widgets = node.widgets || [];
-        if (widgets.length) {
-            content += '<div class="section"><h4>🎛️ Values</h4>';
-            widgets.forEach(widget => {
-                if (widget.type === "button" || widget.type === "glamour") return;
-                content += `
-                    <div class="widget-input">
-                        <label>🔹 ${widget.name}: </label>
-                        <input type="text" 
-                            class="glamour-input" 
-                            data-widget="${widget.name}"
-                            value="${widget.value || ''}"
-                            style="
-                                background: rgba(255,255,255,0.9);
-                                border: 1px solid #ccc;
-                                border-radius: 4px;
-                                padding: 2px 5px;
-                                margin-left: 5px;
-                            "
-                        />
-                    </div>`;
-            });
-            content += '</div>';
+        // Add widget values section (skip for Glamour node)
+        if (node.type !== "Glamour 🦊") {
+            const widgets = node.widgets || [];
+            if (widgets.length) {
+                content += '<div class="section"><h4>🎛️ Values</h4>';
+                widgets.forEach(widget => {
+                    if (widget.type === "button" || widget.type === "glamour") return;
+                    content += `
+                        <div class="widget-input">
+                            <label>🔹 ${widget.name}: </label>
+                            <input type="text" 
+                                class="glamour-input" 
+                                data-widget="${widget.name}"
+                                value="${widget.value || ''}"
+                                style="
+                                    background: rgba(255,255,255,0.9);
+                                    border: 1px solid #ccc;
+                                    border-radius: 4px;
+                                    padding: 2px 5px;
+                                    margin-left: 5px;
+                                "
+                            />
+                        </div>`;
+                });
+                content += '</div>';
+            }
         }
         
         return content;

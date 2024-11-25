@@ -32,7 +32,8 @@ class GlamourImageManager:
         # Create prefix from node type
         prefix = GlamourImageManager.to_snake_case(node_type)
         
-        return f"{prefix}_{hash_value}"
+        # Return full identifier
+        return f"{prefix}_{node_id}_{hash_value}"
     
     @staticmethod
     def get_image_path(image_id: str, node_type: str = None) -> str:
