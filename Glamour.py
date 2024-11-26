@@ -23,7 +23,10 @@ class GlamourNode:
 
     @classmethod
     def ROUTES(cls):
-        return {"get_glamour_path": cls.get_glamour_path}
+        return {
+            "get_glamour_path": cls.get_glamour_path,
+            "check_glamour_timestamp": cls.check_glamour_timestamp
+        }
 
     @classmethod
     def get_glamour_path(cls, image_id=None, node_type=None):
@@ -38,3 +41,20 @@ class GlamourNode:
             "path": relative_path,
             "exists": os.path.exists(path)
         }
+
+    @classmethod
+    def check_glamour_timestamp(cls, image_id=None, node_type=None):
+        if not image_id:
+            return {"success": False, "error": "No image_id provided"}
+        
+        path = GlamourImageManager.get_image_path(image_id, node_type)
+        
+        if os.path.exists(path):
+            timestamp = os.path.getmtime(path)
+            return {
+                "success": True,
+                "timestamp": timestamp,
+                "path": os.path.relpath(path, folder_paths.get_output_directory())
+            }
+        
+        return {"success": False, "error": "File not found"}

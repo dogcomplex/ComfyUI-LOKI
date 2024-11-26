@@ -406,6 +406,30 @@ app.registerExtension({
             }
             return result;
         };
+
+        // Add configuration to the app's settings
+        app.ui.settings.addSetting({
+            id: "Comfy.Glamour.polling",
+            name: "Glamour Image Polling",
+            type: "boolean",
+            defaultValue: true,
+            onChange(value) {
+                GlamourImageManager.updatePollingConfig({ enabled: value });
+            }
+        });
+
+        app.ui.settings.addSetting({
+            id: "Comfy.Glamour.pollingInterval",
+            name: "Glamour Polling Interval (ms)",
+            type: "number",
+            defaultValue: 1000,
+            min: 100,
+            max: 10000,
+            step: 100,
+            onChange(value) {
+                GlamourImageManager.updatePollingConfig({ interval: value });
+            }
+        });
     },
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeData.name === GlamourUI.GLAMOUR_NODE_TYPE) {
