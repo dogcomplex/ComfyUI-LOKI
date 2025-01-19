@@ -1,5 +1,6 @@
 export class GlamourUI {
     static RAINBOW_GRADIENT = 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96c93d)';
+    static AURORA_GRADIENT = 'linear-gradient(90deg, rgba(255, 0, 150, 0.7), rgba(0, 255, 255, 0.5), rgba(0, 255, 255, 0.7))';
     static GLAMOUR_NODE_TYPE = "Glamour 🦊";
     
     static updateOverlayStyles(overlay, transform, nodeWidth, fullHeight, relativeScale, visible) {
@@ -27,15 +28,25 @@ export class GlamourUI {
             width: "100%",
             height: "100%",
             maxHeight: "100%",
-            overflowY: "auto",
+            overflowY: "hidden",
             overflowX: "hidden",
             display: "flex",
             flexDirection: "column",
             boxSizing: "border-box",
             padding: "10px",
-            fontSize: `${12 * scale}px`
+            fontSize: `${12 * scale}px`,
+            background: this.AURORA_GRADIENT,
+            backgroundSize: '400% 400%',
+            animation: 'northernLights 10s ease-in-out infinite',
+            maskImage: 'radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0))',
+            WebkitMaskImage: 'radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0))',
+            mixBlendMode: 'lighten',
+            opacity: '0.9'
         });
 
+        // Add webkit scrollbar style directly to element
+        element.style.setProperty("-webkit-scrollbar", "none");
+        
         // Scale all child elements proportionally
         Array.from(element.children).forEach(child => {
             Object.assign(child.style, {
@@ -59,11 +70,23 @@ export class GlamourUI {
         
         stylesToClear.forEach(style => element.style[style] = '');
         
+        // Find the aurora element (sibling)
+        const auroraElement = element.parentElement.querySelector('.glamour-aurora');
+        if (auroraElement) {
+            // Keep aurora visible but behind the image
+            auroraElement.style.opacity = '0.9';
+            auroraElement.style.zIndex = '1';
+        }
+        
+        // Set image on top with solid background
         Object.assign(element.style, {
             backgroundImage: `url("${imageSrc}")`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
+            backgroundRepeat: 'no-repeat',
+            mixBlendMode: 'normal',
+            zIndex: '2',
+            opacity: '1'
         });
     }
 
@@ -115,11 +138,29 @@ export class GlamourUI {
     static initialize() {
         const style = document.createElement('style');
         style.textContent = `
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }`;
+            @keyframes northernLights {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+            
+            .glamour-content {
+                background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+                border-radius: 10px;
+                overflow: hidden;
+                position: relative;
+            }
+            
+            .glamour-image {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                mix-blend-mode: lighten;
+                pointer-events: none;
+            }
+        `;
         document.head.appendChild(style);
     }
 
@@ -132,7 +173,25 @@ export class GlamourUI {
                 box-shadow: 0 4px 15px rgba(0,0,0,0.2);
                 box-sizing: border-box;
                 height: 100%;
+                background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
             ">
+                <div class="glamour-aurora" style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 10px;
+                    z-index: 1;
+                    background: ${this.AURORA_GRADIENT};
+                    background-size: 400% 400%;
+                    animation: northernLights 10s ease-in-out infinite;
+                    mask-image: radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0));
+                    -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0));
+                    mix-blend-mode: lighten;
+                    opacity: 0.9;
+                    pointer-events: none;
+                "></div>
                 <div class="glamour-image" style="
                     position: absolute;
                     top: 0;
@@ -140,19 +199,18 @@ export class GlamourUI {
                     width: 100%;
                     height: 100%;
                     border-radius: 10px;
-                    z-index: 0;
-                    background: ${this.RAINBOW_GRADIENT};
-                    background-size: 400% 400%;
-                    animation: gradientBG 15s ease infinite;
+                    z-index: 2;
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    pointer-events: none;
                 "></div>
                 <div style="
                     position: relative;
                     background: rgba(255,255,255,0.85);
                     padding: 15px;
                     border-radius: 8px;
-                    text-align: left;
-                    box-sizing: border-box;
-                    z-index: 1;
+                    z-index: 3;
                 ">
                     ${this.createNodeContent(node, nodeTypeSnake, nodeHash)}
                 </div>

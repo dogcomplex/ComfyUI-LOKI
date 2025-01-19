@@ -21,16 +21,23 @@ export class GlamourImageManager {
         // Add cache busting parameter if requested
         const cacheParam = cacheBust ? `&t=${Date.now()}` : '';
         
-        // Return array of URLs directly instead of an async getter
-        const specificUrl = `/view?filename=${encodeURIComponent(image_id)}.png&type=output&subfolder=Glamour${cacheParam}`;
-        const nodeTypeUrl = `/view?filename=${encodeURIComponent(GlamourUI.snakeCase(node_type))}.png&type=output&subfolder=Glamour${cacheParam}`;
+        // Try WebP first, then PNG
+        const specificUrls = [
+            `/view?filename=${encodeURIComponent(image_id)}.webp&type=output&subfolder=Glamour${cacheParam}`,
+            `/view?filename=${encodeURIComponent(image_id)}.png&type=output&subfolder=Glamour${cacheParam}`
+        ];
+        
+        const nodeTypeUrls = [
+            `/view?filename=${encodeURIComponent(GlamourUI.snakeCase(node_type))}.webp&type=output&subfolder=Glamour${cacheParam}`,
+            `/view?filename=${encodeURIComponent(GlamourUI.snakeCase(node_type))}.png&type=output&subfolder=Glamour${cacheParam}`
+        ];
         
         console.log('Generated URLs:', {
-            specificUrl,
-            nodeTypeUrl
+            specificUrls,
+            nodeTypeUrls
         });
         
-        return [specificUrl, nodeTypeUrl];
+        return [...specificUrls, ...nodeTypeUrls];
     }
 
     static async loadImage(node, ctx, nodeHash, onImageLoaded, forceCacheBust = false) {
@@ -39,11 +46,10 @@ export class GlamourImageManager {
         // Clear existing poller if any
         this.clearImagePoller(nodeId);
         
-        // Remove cache check - we want to always load fresh images
         const nodeTypeSnake = GlamourUI.snakeCase(node.type);
         const imageId = `${nodeTypeSnake}_${nodeId}_${nodeHash}`;
         
-        const urls = this.getImageUrls(imageId, node.type, true); // Always use cache busting
+        const urls = this.getImageUrls(imageId, node.type, forceCacheBust);
         
         if (!urls || urls.length === 0) {
             console.log('No valid image URLs found');
@@ -76,9 +82,32 @@ export class GlamourImageManager {
 
         queueEntry.image.onload = () => {
             queueEntry.loading = false;
-            onImageLoaded(queueEntry.image, node, ctx);
-            imageLoadQueue.delete(nodeId);
-
+            const isWebP = urls[queueEntry.currentIndex].endsWith('.webp');
+            
+            if (isWebP) {
+                // Check if image is animated by attempting to get frame count
+                try {
+                    const canvas = document.createElement('canvas');
+                    const tempCtx = canvas.getContext('2d');
+                    tempCtx.drawImage(queueEntry.image, 0, 0);
+                    const imageData = tempCtx.getImageData(0, 0, 1, 1);
+                    const isAnimated = imageData.data[3] === 0; // Crude check for animation
+                    
+                    if (isAnimated) {
+                        queueEntry.isAnimated = true;
+                        queueEntry.currentFrame = 0;
+                        this.startWebPAnimation(nodeId, queueEntry, node, ctx, onImageLoaded);
+                    } else {
+                        onImageLoaded(queueEntry.image, node, ctx);
+                    }
+                } catch (error) {
+                    console.warn('Error checking WebP animation:', error);
+                    onImageLoaded(queueEntry.image, node, ctx);
+                }
+            } else {
+                onImageLoaded(queueEntry.image, node, ctx);
+            }
+            
             if (GLAMOUR_CONFIG.pollingEnabled) {
                 this.startImagePoller(nodeId, nodeHash, node, ctx, onImageLoaded);
             }
@@ -128,11 +157,31 @@ export class GlamourImageManager {
         GLAMOUR_CONFIG.imagePollers.set(nodeId, timerId);
     }
 
+    static startWebPAnimation(nodeId, queueEntry, node, ctx, onImageLoaded) {
+        if (!queueEntry.animationTimer) {
+            queueEntry.animationTimer = setInterval(() => {
+                onImageLoaded(queueEntry.image, node, ctx);
+                queueEntry.currentFrame++;
+                // Reset frame counter if needed
+                if (queueEntry.currentFrame >= queueEntry.frameCount) {
+                    queueEntry.currentFrame = 0;
+                }
+            }, 1000 / 30); // 30fps default
+        }
+    }
+
     static clearImagePoller(nodeId) {
         const existingPoller = GLAMOUR_CONFIG.imagePollers.get(nodeId);
         if (existingPoller) {
             clearInterval(existingPoller);
             GLAMOUR_CONFIG.imagePollers.delete(nodeId);
+        }
+        
+        // Also clear any WebP animation timer
+        const queueEntry = imageLoadQueue.get(nodeId);
+        if (queueEntry?.animationTimer) {
+            clearInterval(queueEntry.animationTimer);
+            queueEntry.animationTimer = null;
         }
     }
 
