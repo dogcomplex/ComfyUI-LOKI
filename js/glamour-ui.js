@@ -33,7 +33,7 @@ export class GlamourUI {
             display: "flex",
             flexDirection: "column",
             boxSizing: "border-box",
-            padding: "10px",
+            padding: "0",
             fontSize: `${12 * scale}px`,
             background: this.AURORA_GRADIENT,
             backgroundSize: '400% 400%',
@@ -52,8 +52,8 @@ export class GlamourUI {
             Object.assign(child.style, {
                 transform: "none",
                 fontSize: "inherit",
-                padding: `${5 * scale}px`,
-                margin: `${5 * scale}px`
+                padding: "0",
+                margin: "0"
             });
         });
     }
@@ -160,6 +160,29 @@ export class GlamourUI {
                 mix-blend-mode: lighten;
                 pointer-events: none;
             }
+
+            .glamour-overlay {
+                pointer-events: all;
+            }
+
+            .glamour-overlay:hover .glamour-text {
+                opacity: 1 !important;
+                pointer-events: all;
+            }
+
+            .glamour-text {
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                background: rgba(255,255,255,0.85);
+                padding: 15px;
+                border-radius: 8px;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 10;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -168,12 +191,12 @@ export class GlamourUI {
         return `
             <div class="glamour-content" style="
                 position: relative;
-                padding: 20px;
+                padding: 0;
                 border-radius: 10px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                box-shadow: none;
                 box-sizing: border-box;
                 height: 100%;
-                background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+                background: transparent;
             ">
                 <div class="glamour-aurora" style="
                     position: absolute;
@@ -205,12 +228,15 @@ export class GlamourUI {
                     background-repeat: no-repeat;
                     pointer-events: none;
                 "></div>
-                <div style="
+                <div class="glamour-text" style="
                     position: relative;
                     background: rgba(255,255,255,0.85);
                     padding: 15px;
                     border-radius: 8px;
                     z-index: 3;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                    pointer-events: none;
                 ">
                     ${this.createNodeContent(node, nodeTypeSnake, nodeHash)}
                 </div>
