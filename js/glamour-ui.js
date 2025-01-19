@@ -130,6 +130,7 @@ export class GlamourUI {
     }
 
     static snakeCase(str) {
+        if (!str) return '';
         return str.toLowerCase()
             .replace(/[^\w\s-]/g, '')
             .replace(/[-\s]+/g, '_');

@@ -125,7 +125,10 @@ function generateNodeHash(node) {
 }
 
 function createGlamourOverlay(node, inputName, inputData, app) {
-    if (!node) return;
+    if (!node || typeof node.addCustomWidget !== 'function') {
+        console.warn('Node does not support custom widgets:', node?.type);
+        return null;
+    }
     
     if (node.widgets?.find(w => w.type === "glamour")) return;
     
