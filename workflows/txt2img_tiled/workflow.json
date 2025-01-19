@@ -1,0 +1,18 @@
+{
+  "status": "completed",
+  "name": "txt2img_tiled",
+  "data": {
+    "description": "Generate large images using tiled vae decode"
+  },
+  "description": "Generate large images using tiled vae decode",
+  "requirements": [],
+  "timestamp": "2025-01-13T21:36:09.758331",
+  "error": {
+    "message": "Command '['python', 'N:\\\\COMFY\\\\ComfyUI\\\\custom_nodes\\\\ComfyUI-LOKI\\\\filter_nodes.py', '--prompt', 'Generate large images using tiled vae decode', '--output-folder', 'N:\\\\COMFY\\\\ComfyUI\\\\custom_nodes\\\\ComfyUI-LOKI\\\\workflows\\\\txt2img_tiled']' returned non-zero exit status 1.",
+    "stderr": "  File \"N:\\COMFY\\ComfyUI\\custom_nodes\\ComfyUI-LOKI\\filter_nodes.py\", line 137\n    result[\"reason\": \"No reason provided\"}\n                                         ^\nSyntaxError: closing parenthesis '}' does not match opening parenthesis '['\n"
+  },
+  "output_files": {
+    "installed_nodes": "installed_nodes_filtered.md",
+    "available_nodes": "available_nodes_filtered.md"
+  }
+}

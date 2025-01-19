@@ -125,8 +125,14 @@ function generateNodeHash(node) {
 }
 
 function createGlamourOverlay(node, inputName, inputData, app) {
+    if (!node) return;
+    
     if (node.widgets?.find(w => w.type === "glamour")) return;
     
+    if (!node.widgets) {
+        node.widgets = [];
+    }
+
     const isGlamourNode = node.type === GlamourUI.GLAMOUR_NODE_TYPE;
     glamourStates.set(node.id, isGlamourNode);
     updateGlobalControl();
@@ -268,18 +274,20 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         };
     }
 
-    node.widgets.forEach(widget => {
-        if (widget.type !== "glamour") {
-            const originalCallback = widget.callback;
-            widget.callback = function(value) {
-                if (originalCallback) {
-                    originalCallback.call(this, value);
-                }
-                updateInputField(widget.name, value);
-                app.graph.setDirtyCanvas(true);
-            };
-        }
-    });
+    if (Array.isArray(node.widgets)) {
+        node.widgets.forEach(widget => {
+            if (widget?.type !== "glamour") {
+                const originalCallback = widget.callback;
+                widget.callback = function(value) {
+                    if (originalCallback) {
+                        originalCallback.call(this, value);
+                    }
+                    updateInputField(widget.name, value);
+                    app.graph.setDirtyCanvas(true);
+                };
+            }
+        });
+    }
 
     const originalOnInputChanged = node.onInputChanged;
     node.onInputChanged = function() {
@@ -290,11 +298,13 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         app.graph.setDirtyCanvas(true);
     };
 
-    node.widgets.forEach(widget => {
-        if (widget.type !== "glamour") {
-            updateInputField(widget.name, widget.value);
-        }
-    });
+    if (Array.isArray(node.widgets)) {
+        node.widgets.forEach(widget => {
+            if (widget?.type !== "glamour" && widget?.name && widget?.value !== undefined) {
+                updateInputField(widget.name, widget.value);
+            }
+        });
+    }
     updateHashDisplay(overlay);
 
     widget.overlay = overlay;

@@ -1,0 +1,14 @@
+{
+  "status": "completed",
+  "name": "img2img_basic",
+  "data": {
+    "description": "Convert an input image to a new image based on text prompts"
+  },
+  "description": "Convert an input image to a new image based on text prompts",
+  "requirements": [],
+  "timestamp": "2025-01-13T17:07:46.009999",
+  "output_files": {
+    "installed_nodes": "installed_nodes_filtered.md",
+    "available_nodes": "available_nodes_filtered.md"
+  }
+}

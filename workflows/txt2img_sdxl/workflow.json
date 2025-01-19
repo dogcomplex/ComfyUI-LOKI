@@ -1,0 +1,18 @@
+{
+  "status": "completed",
+  "name": "txt2img_sdxl",
+  "data": {
+    "description": "Text to image using SDXL base and refiner models"
+  },
+  "description": "Text to image using SDXL base and refiner models",
+  "requirements": [],
+  "timestamp": "2025-01-13T20:51:55.942433",
+  "error": {
+    "message": "Command '['python', 'N:\\\\COMFY\\\\ComfyUI\\\\custom_nodes\\\\ComfyUI-LOKI\\\\filter_nodes.py', '--prompt', 'Text to image using SDXL base and refiner models', '--output-folder', 'N:\\\\COMFY\\\\ComfyUI\\\\custom_nodes\\\\ComfyUI-LOKI\\\\workflows\\\\txt2img_sdxl']' returned non-zero exit status 1.",
+    "stderr": "  File \"N:\\COMFY\\ComfyUI\\custom_nodes\\ComfyUI-LOKI\\filter_nodes.py\", line 137\n    result[\"reason\": \"No reason provided\"}\n                                         ^\nSyntaxError: closing parenthesis '}' does not match opening parenthesis '['\n"
+  },
+  "output_files": {
+    "installed_nodes": "installed_nodes_filtered.md",
+    "available_nodes": "available_nodes_filtered.md"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "status": "completed",
+  "name": "img2img_inpaint",
+  "data": {
+    "description": "Inpainting workflow with mask input"
+  },
+  "description": "Inpainting workflow with mask input",
+  "requirements": [],
+  "timestamp": "2025-01-13T18:46:04.576568",
+  "error": {
+    "message": "Command '['python', 'N:\\\\COMFY\\\\ComfyUI\\\\custom_nodes\\\\ComfyUI-LOKI\\\\filter_nodes.py', '--prompt', 'Inpainting workflow with mask input', '--output-folder', 'N:\\\\COMFY\\\\ComfyUI\\\\custom_nodes\\\\ComfyUI-LOKI\\\\workflows\\\\img2img_inpaint']' returned non-zero exit status 1.",
+    "stderr": "Traceback (most recent call last):\n  File \"N:\\COMFY\\ComfyUI\\custom_nodes\\ComfyUI-LOKI\\filter_nodes.py\", line 302, in <module>\n    )\n  File \"N:\\COMFY\\ComfyUI\\custom_nodes\\ComfyUI-LOKI\\filter_nodes.py\", line 294, in main\n    output_path = Path(args.output_folder)\n  File \"N:\\COMFY\\ComfyUI\\custom_nodes\\ComfyUI-LOKI\\filter_nodes.py\", line 268, in filter_nodes\n    results = query_llm_batch(batch_prompts, SYSTEM_PROMPT, batch_size)\nKeyError: 'reason'\n"
+  }
+}

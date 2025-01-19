@@ -1,0 +1,14 @@
+{
+  "status": "completed",
+  "name": "txt2img_basic",
+  "data": {
+    "description": "Basic text to image generation with negative prompt support"
+  },
+  "description": "Basic text to image generation with negative prompt support",
+  "requirements": [],
+  "timestamp": "2025-01-13T19:25:30.524526",
+  "error": {
+    "message": "Command '['python', 'N:\\\\COMFY\\\\ComfyUI\\\\custom_nodes\\\\ComfyUI-LOKI\\\\filter_nodes.py', '--prompt', 'Basic text to image generation with negative prompt support', '--output-folder', 'N:\\\\COMFY\\\\ComfyUI\\\\custom_nodes\\\\ComfyUI-LOKI\\\\workflows\\\\txt2img_basic']' returned non-zero exit status 1.",
+    "stderr": "Traceback (most recent call last):\n  File \"N:\\COMFY\\ComfyUI\\custom_nodes\\ComfyUI-LOKI\\filter_nodes.py\", line 302, in <module>\n    main() \n  File \"N:\\COMFY\\ComfyUI\\custom_nodes\\ComfyUI-LOKI\\filter_nodes.py\", line 294, in main\n    filter_nodes(\n  File \"N:\\COMFY\\ComfyUI\\custom_nodes\\ComfyUI-LOKI\\filter_nodes.py\", line 268, in filter_nodes\n    \"reason\": result[\"reason\"],\nKeyError: 'reason'\n"
+  }
+}

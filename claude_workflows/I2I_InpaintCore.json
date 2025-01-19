@@ -1,0 +1,152 @@
+{
+  "last_node_id": 6,
+  "last_link_id": 8,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "VAEEncodeForInpaint",
+      "pos": [200, 200],
+      "size": {"width": 210, "height": 110},
+      "inputs": {
+        "pixels": ["image", {}],
+        "mask": ["mask", {}],
+        "vae": ["VAE", {}]
+      },
+      "outputs": {
+        "LATENT": ["LATENT", {}]
+      }
+    },
+    {
+      "id": 2, 
+      "type": "CLIPTextEncode",
+      "pos": [200, 400],
+      "size": {"width": 210, "height": 78},
+      "inputs": {
+        "text": ["STRING", {"default": ""}],
+        "clip": ["CLIP", {}]
+      },
+      "outputs": {
+        "CONDITIONING": ["CONDITIONING", {}]
+      }
+    },
+    {
+      "id": 3,
+      "type": "CLIPTextEncode",
+      "pos": [200, 500],
+      "size": {"width": 210, "height": 78},
+      "inputs": {
+        "text": ["STRING", {"default": ""}],
+        "clip": ["CLIP", {}]
+      },
+      "outputs": {
+        "CONDITIONING": ["CONDITIONING", {}]
+      }
+    },
+    {
+      "id": 4,
+      "type": "KSampler",
+      "pos": [450, 200],
+      "size": {"width": 210, "height": 262},
+      "inputs": {
+        "model": ["MODEL", {}],
+        "seed": ["INT", {"default": 0}],
+        "steps": ["INT", {"default": 20}],
+        "cfg": ["FLOAT", {"default": 7.5}],
+        "sampler_name": ["STRING", {"default": "euler_a"}],
+        "scheduler": ["STRING", {"default": "karras"}],
+        "positive": ["CONDITIONING", {}],
+        "negative": ["CONDITIONING", {}],
+        "latent_image": ["LATENT", {}],
+        "denoise": ["FLOAT", {"default": 1.0}]
+      },
+      "outputs": {
+        "LATENT": ["LATENT", {}]
+      }
+    },
+    {
+      "id": 5,
+      "type": "VAEDecode",
+      "pos": [700, 200],
+      "size": {"width": 210, "height": 78},
+      "inputs": {
+        "samples": ["LATENT", {}],
+        "vae": ["VAE", {}]
+      },
+      "outputs": {
+        "IMAGE": ["IMAGE", {}]
+      }
+    },
+    {
+      "id": 6,
+      "type": "CheckpointLoaderSimple",
+      "pos": [0, 200],
+      "size": {"width": 210, "height": 98},
+      "inputs": {
+        "ckpt_name": ["STRING", {"default": "v1-5-pruned.ckpt"}]
+      },
+      "outputs": {
+        "MODEL": ["MODEL", {}],
+        "CLIP": ["CLIP", {}],
+        "VAE": ["VAE", {}]
+      }
+    }
+  ],
+  "links": [
+    {
+      "id": 1,
+      "from_node": 6,
+      "from_output": "MODEL",
+      "to_node": 4,
+      "to_input": "model"
+    },
+    {
+      "id": 2,
+      "from_node": 6,
+      "from_output": "CLIP",
+      "to_node": 2,
+      "to_input": "clip"
+    },
+    {
+      "id": 3,
+      "from_node": 6,
+      "from_output": "CLIP",
+      "to_node": 3,
+      "to_input": "clip"
+    },
+    {
+      "id": 4,
+      "from_node": 6,
+      "from_output": "VAE",
+      "to_node": 1,
+      "to_input": "vae"
+    },
+    {
+      "id": 5,
+      "from_node": 1,
+      "from_output": "LATENT",
+      "to_node": 4,
+      "to_input": "latent_image"
+    },
+    {
+      "id": 6,
+      "from_node": 2,
+      "from_output": "CONDITIONING",
+      "to_node": 4,
+      "to_input": "positive"
+    },
+    {
+      "id": 7,
+      "from_node": 3,
+      "from_output": "CONDITIONING",
+      "to_node": 4,
+      "to_input": "negative"
+    },
+    {
+      "id": 8,
+      "from_node": 4,
+      "from_output": "LATENT",
+      "to_node": 5,
+      "to_input": "samples"
+    }
+  ]
+}
