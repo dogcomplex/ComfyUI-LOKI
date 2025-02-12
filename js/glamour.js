@@ -130,8 +130,18 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         return null;
     }
     
-    if (node.widgets?.find(w => w.type === "glamour")) return;
+    // Check for existing glamour widget and remove it if found
+    const existingGlamourIndex = node.widgets?.findIndex(w => w.type === "glamour");
+    if (existingGlamourIndex !== -1) {
+        node.widgets.splice(existingGlamourIndex, 1);
+    }
     
+    // Remove any existing glamour overlay elements
+    const existingOverlay = document.querySelector(`[data-node-id="${node.id}"] .glamour-content`);
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+
     if (!node.widgets) {
         node.widgets = [];
     }
