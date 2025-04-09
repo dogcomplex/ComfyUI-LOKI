@@ -212,20 +212,24 @@ net start winnat
 ---
 
 ## STATE OF AI (04/2025):  {#state-of-ai}
-### Animation is suddenly cheap and easy now:
+- Capabilities I'm keeping an eye on:
+
+#### Animation is suddenly cheap and easy now:
+- https://www.reddit.com/r/singularity/s/6BU3I8Xcfm
+- this in particular looks like a genius new way to maintain consistency, and will probably have deeper implications for AI training outside this domain
 - https://www.reddit.com/r/aivideo/comments/1jky598/what_if_studio_ghibli_directed_lord_of_the_rings/
 - https://x.com/techhalla/status/1906433147211768140
 	- animated stylized remakes are very doable for cheap now, especially with (but not requiring) chatgpt.
-	- process is essentially: get each scene starting (and optionally end) frame, convert to your new style, put through video generator until you're happy, repeat (prompt each one)
+	- naive process is essentially: get each scene starting (and optionally end) frame, convert to your new style, put through video generator until you're happy, repeat (prompt each one)
 	- https://github.com/dogcomplex/flow_animator is a crude version I made to do this splitting and prompt annotating automatically from source video (hit me up to fix it into working version if actually using it)
 	- doable with Wan in ComfyUI too for free
 
-### Reshots are quite doable (and controllable) too:
+#### Camera control is quite doable (along with any other visual effect) too:
 - https://jianhongbai.github.io/ReCamMaster/
 - https://github.com/TrajectoryCrafter
 	- camera movements, open source version
 
-### Steerable Motion in general is quite doable:
+#### Steerable Motion *in general* is quite doable:
 - https://github.com/Eyeline-Research/Go-with-the-Flow
 - These guys somewhat solved steerable motion for video generations.  You can now just input a very crude sliding puppet animation into it and get out a much more lifelike motion.  More importantly, this works for keeping *multiple clips* consistent with each other, thus avoiding the awkward feeling between clips where the AI suddenly reverses direction or changes the way it handles motion.  Much less hiccuping = possible indefinitely-extendable video clips.
 - Problem is they only suppose CogXVideo which is the lowest-quality open source model atm.  If and when they make a LoRA for Wan video then expect infinite-length consistent videos
@@ -233,17 +237,17 @@ net start winnat
 - I converted a meme video with their work:  https://www.youtube.com/watch?v=Gh-ImbICkeI  one-shot no-interference conversion from 2D crude animation to AI video
 - keep in mind this is all just using the first frame + the general motion of the video.  Modify the first frame to any style you want (Ghibli?) and get the motion for free
 
-### Steerable Motion is especially doable with human poses:
+#### Steerable Motion is especially doable with human poses:
 - https://www.reddit.com/r/comfyui/comments/1jpcpfe/wan_21_fun_13b_control_16gb_vram_comfyui_native/
 - https://www.reddit.com/r/StableDiffusion/comments/1jortj7/tropical_joker_my_wan21_vid2vid_test_on_a_local/
 - AKA "ControlNet".   This does impose enough motion steering between extended clips too so a long dance will actually work!
 
-### In general, long clips beyond 5-10s are still difficult to stitch
-- https://www.youtube.com/watch?v=V1vNV5YPyIk  my tech demo of what we *can* do so far (in a one-shot blind generation)
+#### In general, long clips beyond 5-10s are still difficult to stitch
+- <a href="https://www.youtube.com/watch?v=V1vNV5YPyIk">Opassa Beach - my tech demo</a> of what we *can* do so far (in a one-shot blind generation)
 - the above Go-with-the-Flow controls enable *almost*-consistent motion between clips but there are still hiccups and backsliding between clips as the AI guesses differently.
 - Not sure if it's a CogXVideo limitation which would improve with Wan video or not.
 - Still on the lookout for someone to get continuous infinite clips working
-
+- You can fudge this by just generating several options for each next extended clip and picking the most consistent, then repeating.  This is more than good enough for most use cases.  It's just not *automatic* yet.
 
  
 ---
@@ -252,10 +256,10 @@ net start winnat
 https://www.reddit.com/r/comfyui/
 https://www.youtube.com/@pixaroma/videos
 https://www.youtube.com/@latentvision/videos
-- I'm a reader more than a listener, but I hear these are good guides
+- I'm a reader more than a listener, but I hear these are good video guides
 
-### N8N  {#n8n}
-- Starting to look into this node editor too.  Looks useful
+#### N8N  {#n8n}
+- Starting to look into this node editor too.  Looks very useful, and integrated with Comfyui.  Will report back.
 - https://www.reddit.com/r/n8n/comments/1jbvt0a/i_built_a_free_browser_extension_that_creates/
 
 
@@ -263,14 +267,14 @@ https://www.youtube.com/@latentvision/videos
 
 ## FAQ  {#faq}
 
-### Q: Can comfyui workflows just be run in plain python without the interface?
+#### Q: Can comfyui workflows just be run in plain python without the interface?
 - A: Yep.  https://github.com/Chaoses-Ib/ComfyScript  Translates any workflow to a python script format.  Vice-versa is trickier but likely doable with an LLM to convert it back to a JSON workflow (on the TODO list)
 - https://github.com/atmaranto/ComfyUI-SaveAsScript  Too.  Haven't used either extensively yet though.
 
-### Q: Wait, can any arbitrary program be represented as a ComfyUI workflow? 
+#### Q: Wait, can any arbitrary program be represented as a ComfyUI workflow?  Is this a complete programming language?
 - A: Yeah pretty much, though we need to build the mapper still and the current state of comfyui node libraries are a bit of a mess.  Basically though any program or function can be easily wrapped up as a Comfy node at least and run like that, but we can drill down into them too and represent the whole program with nodes if you want to.  Takes conversion from iterative to functional programming styles though - but doable.  Should be possible for other languages too, but faces the same challenges as any language conversion.  All getting a lot easier as AIs improve though.  Expecting to be able to do this dynamically mostly reliably with e.g. Claude.
 
-### Q: Can we modularly/recursively call workflows from other workflows?
+#### Q: Can we modularly/recursively call workflows from other workflows?
 - A: Yes but the 3rd party implementation is janky, old and needs dev work.  
 - https://github.com/vivax3794/ComfyUI-Sub-Nodes
 - I am pretty-much expecting to need to rewrite this nodepack into an updated one.  But the proof of concept is there and works.  Use a caller node to modularly go through another workflow, which needs to have its inputs/outputs explicitly set.  My plan is to have an LLM auto-wrap each workflow and determine those inputs/outputs.
@@ -278,7 +282,7 @@ https://www.youtube.com/@latentvision/videos
 ### Q: Can we call workflows from other computers or other instances of ComfyUI?
 - A: Yes.... but it's also super janky and needs work.  
 - https://github.com/ComfyPlus/ComfyPlus_Anywhere
-- ...
+- ...TODO need to find these nodes again
 
 
 ### Q: Can we run multiple instances of ComfyUI on the same machine?
