@@ -4,8 +4,6 @@ This is a WIP guide to Open Source AI Image/Video/Text/Code Generation, centered
 
 ## Table of Contents
 - [Level 0: Total Beginner](#level-0-total-beginner)
-  - [Image Gen](#image-gen)
-  - [Video Gen](#video-gen)
 - [Level 0.5: Casual GenAI](#level-05-casual-genai)
 - [Level 1: Easy Local Official ComfyUI](#level-1-easy-local-official-comfyui)
 - [Level 2: Portable ComfyUI](#level-2-portable-comfyui)
@@ -15,7 +13,7 @@ This is a WIP guide to Open Source AI Image/Video/Text/Code Generation, centered
 - [FAQ](#faq)
 - [Troubleshooting](#troubleshooting)
 
-It's my hope to continue updating this with advice to people at different skill/commitment levels, from total beginner to power user, while building a ComfyUI-based platform that targets a similar scope.  AI should be accessible to everyone - we're not quite there yet, but those days are coming.  Those of us who are technical enough to wade through the current mess can help make that happen.
+It's my hope to continue updating this with advice for people at different skill/commitment levels, from total beginner to power user, while building a ComfyUI-based useful platform that targets a similar scope.  Open source AI tools should be accessible to everyone - we're not quite there yet, but those days are coming.  Those of us who are technical enough to wade through the current mess can help make that happen.
 
 ---
 
