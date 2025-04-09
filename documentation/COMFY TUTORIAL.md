@@ -216,6 +216,7 @@ net start winnat
 
 #### Animation is suddenly cheap and easy now:
 - https://www.reddit.com/r/singularity/s/6BU3I8Xcfm
+- https://test-time-training.github.io/video-dit/
 - this in particular looks like a genius new way to maintain consistency, and will probably have deeper implications for AI training outside this domain
 - https://www.reddit.com/r/aivideo/comments/1jky598/what_if_studio_ghibli_directed_lord_of_the_rings/
 - https://x.com/techhalla/status/1906433147211768140
