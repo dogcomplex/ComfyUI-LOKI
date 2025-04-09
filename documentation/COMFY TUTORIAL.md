@@ -23,6 +23,7 @@ Real advice: Just use <a href="https://chatgpt.com/">ChatGPT</a>
 ###### Image Gen: {#image-gen}
 - <a href="https://openai.com/index/introducing-4o-image-generation/">ChatGPT Guide</a>:  This will honestly probably outperform most local image generation stuff for a while and for any one-off task it's the first place to go.  It's also the most user friendly.  Only start down the rest of this rabbit hole when you're getting into bulk generations, chaining into a larger system, seeking privacy/security, or need specific abilities that ChatGPT can't handle.  We do local AI generation because of open source principles, control, security, and cheap price if you have the hardware already.   If you just want to generate an image (or keyframes for an animation, or consistent characters, or etc etc) just go with ChatGPT off the bat.
 - <a href="https://tensor.art/">Tensor.art</a> also decent for simple one-off workflows that are just a bit more specific than chatgpt.  Free for non-bulk use
+- I do think a chatbot wrapper for very beginner-friendly open source ComfyUI etc services will happen soon, mimicking the versatility of ChatGPT, but we need more organized systems and to train a model for tool use.  Should just be a url portal you talk to and "does the thing" though soon enough.
 
 ###### Video Gen: {#video-gen}
 - Likewise, paid AI video gen services are probably always going to be easier and higher quality than local generation.  If you're just looking to generate a single video without much control, go with one of these.
@@ -72,7 +73,7 @@ https://comfy.icu/workflows/_8ydGT-ekfLY3dXwddfZE/edit
 #### ⚠️ WARNING: HERE THERE BE MONSTERS. ⚠️
 
 - Past this point you are likely going to deal with non-user-friendly incredibly annoying bugs related to the bane of my existence that is the python package manager.  If you're a programmer or just competent enough with vibe coding to copy-paste error logs from comfy into an LLM and follow directions, you'll likely fare okay, but this stuff is nowhere near user friendly yet and needs serious stability polishing.
-- I also generally assume you have at least 24GB VRAM going forward (aka a 3090rtx or 4090rtx or beyond).  Many workflows are still doable with e.g. 12 or 16GB VRAM, but most will become a lot trickier to run without a high memory card.  (Personally I am running mine on a 5090rtx 32GB VRAM beast now and upgrading my workstation further in preparation) 
+- I also generally assume you have at least 24GB VRAM going forward (aka a 3090rtx or 4090rtx or beyond).  Many workflows are still doable with e.g. 12 or 16GB VRAM, but most will become a lot trickier to run without a high VRAM card.  (Personally I am running mine on a 5090rtx 32GB VRAM beast now and upgrading my workstation further in preparation for video/game production) 
 - Apple Mac Studios / M4 processors and similar are also going to create additional challenges.  Mac has limited support, but still works in various workflows.  In general though expect far slower speeds - but hopefully more efficient overall throughput if we run multiple instances of ComfyUI on its large VRAM or run higher-quality models.  Still, not an easy machine for fast tinkering with workflows.  I'd guess they're good for production once you have everything built already, not dev.
 - I will gear specific advice towards a Windows setup, but the general principles should apply to any OS.  Linux may be easier in some ways.  Macs will be harder than either due to the unique graphics hardware.
 </div>
@@ -84,20 +85,20 @@ https://comfy.icu/workflows/_8ydGT-ekfLY3dXwddfZE/edit
 
 ## LEVEL 2: Portable ComfyUI  {#level-2-portable-comfyui}
 - Build ComfyUI slightly more versatile, on bare metal but portable enough you can move it and replicate multiple copies for different builds.  
-- Highly recommended putting it on an NTFS drive if running Windows so you can make virtual links to your model folders between each copy of comfy because you do *not* want to have to copy 500+GB of models each time 
+- Highly recommend putting it on an NTFS drive if running Windows so you can make virtual links to your model folders between each copy of comfy because you do *not* want to have to copy 500+GB of models.  And you will need at least that much storage space.
 - I did not do this, so now I'm into considerably more annoying Dockerized Comfyui instances which use virtual volumes.  At least that ups the security though, which is honestly a major concern on bare metal if you're downloading too many comfy extensions/custom_nodes.
 - TODO guide here but it's the same as the official comfyui portable install 
 - https://docs.comfy.org/installation/comfyui_portable_windows
-- this is probably my main recommended path for anyone who isn't too concerned with security and/or isnt doing doing devwork with various non-compatible workflows which require different system builds
+- this is probably my main recommended path for anyone who isn't too concerned with security yet and/or isnt doing doing devwork with various non-compatible workflows which require different system builds.  Good multi-purpose single build for tinkering that will last you a while.
 
 
-
+---
 
 ## LEVEL 3: Dockerized ComfyUI  {#level-3-dockerized-comfyui}
 
-- If you're more comfortable managing Dockerfile and docker-compose.yml yourself then just do that.   Will look similar to these, except you may want an older cuda version depending on your gpu and current cuda version
-- e.g. `FROM mmartial/comfyui-nvidia-docker:ubuntu24_cuda12.6.3-latest`  for 12.6.3 cuda
-- 
+- This is where you end up if you care about security, reconfigurable builds that can just be spun up for any particular dependency chain, and control.  I personally am really not a fan of Docker in general, and find this all impossible to deal with unless you're an experienced programmer, but it does the trick for now. Ultimately we probably need to wrap a better interface around all this for a more user-friendly version, or bake individual ComfyUI builds in secure containers.  I don't see easy paths to getting normal non-technical people using Docker reliably though.
+- That said, <a href="https://comfydock.com/">Comfydock</a> at least tries to walk this path.  See the Pinokio section below
+- But if you're already technical and you're more comfortable managing Dockerfile and docker-compose.yml yourself then just do that.   Will look similar to these, except you may want an older cuda version depending on your gpu and current cuda version, e.g. `FROM mmartial/comfyui-nvidia-docker:ubuntu24_cuda12.6.3-latest`  for 12.6.3 cuda:
 
 ```
 # Base image with CUDA 12.8 and ComfyUI logic (for a 5090rtx card)
@@ -170,7 +171,7 @@ services:
     user: "1000:1000"
 ```
 
-### Install:
+#### Install:
 - similar to:
 ```
 sudo chown -R $(id -u):$(id -g) /home/w/comfy-run
@@ -187,16 +188,17 @@ docker compose up --force-recreate
 
 - Note: I personally have only resorted to this crude self-configured docker stuff after wrestling with a 5090rtx's unique requirements.  An easier but still sometimes annoying option is to use:
 
-## Pinokio - Comfydock  {#pinokio-comfydock}
+
+### Pinokio - Comfydock  {#pinokio-comfydock}
 - https://github.com/ComfyDock/ComfyDock-Pinokio
-- I somewhat-like this method and would almost endorse it if I didn't occasionally still encounter bugs.  It is *almost* a click-only no-code solution to setting up ComfyUI in dockerized containers
-### Steps:  
+- I somewhat-like this method and would endorse it for most people if I didn't occasionally still encounter bugs which are hard to diagnose.  It is *almost* a click-only no-code solution to setting up ComfyUI in dockerized containers though, which I admire the ambition of
+##### Steps:  
 - basically just follow install instructions in https://github.com/ComfyDock/ComfyDock-Pinokio
 - install Pinokio platform (which is kinda cool, as it's all a bunch of no-code installers for various AI apps.  Though I expect every one is still temporarily a buggy mess that doesnt *quite* live up to the promise yet)
 - hit the Install & Update tab in the ComfyDock Pinokio extension, then Start, then Show Environments (each one churns its installs)
 - essentially this is just a docker wrapper, but it lets you spin up multiple copies of comfyui for each particular application (if e.g. you're battling various compatibility issues across workflows)
-- choose your docker image (12.4 cuda at least recommended for most cards, python 3.12), Environment Type: Default+Both, and then map to your shared folders for custom_nodes, user, models, output, input
-- there is a narrow window in which I recommend this app... you have to be both a programmer and too lazy/unconfident to want to manage docker containers directly, and have hardware that doesn't push the limits.  The no-code feeling is nice though, and spinning up multiple docker containers is nice encapsulation.
+- choose your docker image (12.4 cuda at least recommended for most cards, python 3.12), Environment Type: Default+Both, and then map to your shared folders for custom_nodes, user, models, output, input.  Note, newer gpus need cuda 12.8 which isnt supported yet in here
+- Currently there is a narrow window in which I recommend this app... you have to be both a programmer and too lazy/unconfident to want to manage docker containers directly, and have hardware that doesn't push the limits.  The no-code feeling is nice though, and spinning up multiple docker containers is nice encapsulation.
 - lol if you do end up using this, I found this hard reset to be the main solution to 90% of the bugs I encountered:
 ```
 tasklist | findstr Pinokio
@@ -205,6 +207,9 @@ net stop winnat
 net start winnat
 ```
 
+
+
+---
 
 ## STATE OF AI (04/2025):  {#state-of-ai}
 ### Animation is suddenly cheap and easy now:
