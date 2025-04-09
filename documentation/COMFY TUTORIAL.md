@@ -280,57 +280,75 @@ https://www.youtube.com/@latentvision/videos
 - I am pretty-much expecting to need to rewrite this nodepack into an updated one.  But the proof of concept is there and works.  Use a caller node to modularly go through another workflow, which needs to have its inputs/outputs explicitly set.  My plan is to have an LLM auto-wrap each workflow and determine those inputs/outputs.
 
 ### Q: Can we call workflows from other computers or other instances of ComfyUI?
-- A: Yes.... but it's also super janky and needs work.  
+- A: Yes.... but it's also super janky and needs work.
+- https://github.com/city96/ComfyUI_NetDist
+- Limited success last I tried those nodes.  Would probably have to get Claude to spruce them up a bit before I can rely on them.
 - https://github.com/ComfyPlus/ComfyPlus_Anywhere
-- ...TODO need to find these nodes again
 
 
 ### Q: Can we run multiple instances of ComfyUI on the same machine?
-- A: Yes....? but it will be tricky?
+- A: Yes....? but it will be tricky.  Docker containers with different ports recommended, and then we deal with sharing the same gpu.  One model could in theory be shared between multiple instances though - each doing their own passthroughs.
 
 ### Q: Can we call LLMs from ComfyUI?  Locally?  Remotely?
 - A: Yes to all.  But again - somewhat janky implementations...
+- TODO will upload my workflows for this.  Many implementations are hit or miss and break frequently from updates.
 
 ### Q: ...Do I have to wait for ComfyUI to fully rebuild every time I edit a custom node's code?
 - A:  No!  Janky hack ftw:  https://github.com/logtd/ComfyUI-HotReloadHack 
-Does the trick for most use cases.  You still need to refresh the page in browser.  I recommend lightweight rebuilds with only the custom_nodes you actually need though for fast reloads.
+- Does the trick for most use cases.  You still need to refresh the page in browser.  I recommend lightweight dockerized environments with only the custom_nodes you actually need for a given workflow though for fast reloads.
 
 ### Q:  Can AI sort and score images for me?  This is generating more than I can even view.
-- A:  Yes!  And this is probably where most development will go.  But image analysis is far weaker than generation imo for local models.  DeepSeek's Janus is the best I've used so far.  (Ping me to get me to go through the archived experiments for suggestions on nodes)
+- A:  Yes!  And this is probably where most development will go soon imo.  But image analysis is far weaker than generation imo for local models.  DeepSeek's Janus is the best I've used so far.  (Ping me to get me to go through the archived experiments for suggestions on nodes)
+- TODO workflow links
 
 ### Q:  Can ComfyUI auto-load image/json/prompt/etc files from a folder automatically for batch processing?
-- A:  Yes! BUT.  God, is even this annoying to do sometimes.  
+- A:  Yes! BUT.  God, is even this annoying to do sometimes.
+- TODO will upload my custom workflow just to do this reliably 
 
 ### Q:  Can it do if/else logic and XYZ basic-ass quality of life functionality?
-- A:  Yes usually.... but you have to find the damn working nodes to do it.  We are still in stupidly early days it seems.  Also if/then branching works weirdly in ComfyUI as a declarative functional language than you might be used to - 
+- A:  Yes usually.... but you have to find the damn working nodes to do it.  We are still in stupidly early days it seems.  Also if/then branching works weirdly in ComfyUI as a declarative functional language than you might be used to
+- TODO workflow links
 
 ### Q:  Can ComfyUI do 3d object generation?  AI speech?  Audio-video syncing?  XYZ?
 - A: Yes, yes, yes, probably.  Just search the dang thing in the Comfy Manager and try out the nodes yourself.  Good luck bug hunting.
+- 3D Vision: https://github.com/IsItDanOrAi/ComfyUI-Stereopsis
+- 3D models: https://github.com/kijai/ComfyUI-Hunyuan3DWrapper
+- ...more
 
 ### Q:  Why are you using ComfyUI when you could be using LangChain / OmniChain / n8n / Flowise  (LLM-oriented graph visual computing) ?
-- A:  Mostly just buzzword bloat.  I haven't tried them.  But also I want multimodal as a baseline guarantee, so I don't see why we should use anything but Comfy when it's already quite popular. 
+- A:  Mostly just buzzword bloat filling my brain.  I haven't tried them.  But also I want multimodal as a baseline guarantee, so I don't see why we should use anything but Comfy when it's already quite popular.
+- But I do entirely endorse graph-based programming solutions as I thin they have a good chance of being what non-technical people "program" with in the coming years as this all becomes much more accessible
 - https://github.com/numz/Comfyui-FlowChain
 - https://github.com/mason276752/n8n-nodes-comfyui
 - a lot of cross-compatibility.
-- n8n might be a good idea as the host, calling comfyui.
+- N8N might be a good idea as the host program, calling comfyui. Investigating this.
 
 ### Q:  This is too complicated, can I just type a prompt of what I want and have it just work?
 - A:  Soon.   We're not at gpt4o levels just yet but some tools come close.
-- https://github.com/1038lab/ComfyUI-OmniGen  
+- https://github.com/1038lab/ComfyUI-OmniGen
+- https://github.com/lks-ai/anynode
 
 
 ## TROUBLESHOOTING:  {#troubleshooting}
-- oh god, this would be a nearly endless one.  I will start with just the main techniques that you'll be repeating endlessly til someone automates these:
+- oh god, this would be a nearly endless section if I actually tried to be authoritative here.  I will start with just the main techniques that you'll be repeating endlessly til someone automates these:
 
-### Q:  My ComfyUI has broken!  It says Missing Nodes.
+#### Q:  My ComfyUI has broken!  It says Missing Nodes.
 - A:  This is normal for any workflow beyond the defaults.  Go to Manager => Install Missing Custom Nodes.  Click the top-left box to select all.  Click "Fix" and/or "Update".  Wait for each to process.  Click "Restart".  Wait.  Repeat if there are still any.  
 
-### Q:  It still says it's broken!  Missing Nodes or other error.
+#### Q:  It still says it's broken!  Missing Nodes or other error.
 - A:  You're probably boned.  Try Uninstalling / Reinstalling the bad node in Install Missing Custom Nodes.  If that doesn't do it, then examine the ComfyUI main logs, copy-paste it into a good LLM, and follow directions - usually you need to install a missing python module which wasn't included.   Depending on your build style, that probably means activating the venv (god help you if you dont know what that is - you're in too deep.  Ask the LLM though if you're still feeling brave) and then running pip install on the missing package.  If you got to this point and it still doesn't work I hope you have a degree.  More likely:  just restart comfyui a couple times, then just give up on that particular workflow and try one that's easier to get going.  Many are simply out of date.
 
-### Q:  My ComfyUI has broken!  Different error, or doesnt even startup!
+#### Q:  My ComfyUI has broken!  Different error, or doesnt even startup!
 - A: Oh god.  You're on your own.  If you can see the log paste it into a good LLM and follow directions.  Very likely the culprit is something in ComfyUI/custom_nodes folder, so try emptying everything in there except "comfyui-manager".  Otherwise consider reinstalling your computer (jk just comfyui).
 
-### Q:  Okay I'm reinstalling...
+#### Q:  Okay I'm reinstalling...
 - A:  WAIT.  Save the ComfyUI/input, output, user, custom_nodes and models folders first.   And try just renaming the old custom_nodes and making a fresh custom_nodes folder with just "comfyui-manager" in it first.
+
+#### Q:  Fresh ComfyUI works but one of my custom nodes is breaking things.  The logs don't seem to point to the cause.
+- Worst case scenario, try just binary-search:  cut and paste half the custom_nodes contents somewhere else, rerun and see if it boots okay, and repeatedly divide what's left til you've isolated the offending node and removed it.
+
+#### Q:  Some other issue unrelated to all the above!
+- I'm gonna try to keep a longer term focus on making a general system with the rough edges filed off, but I may be able to help with little things like this too in the interim, and will try and adjust this guide to catch common pain points.  Hit me up in the Signal chat group or similar as this evolves.
+
+
 
