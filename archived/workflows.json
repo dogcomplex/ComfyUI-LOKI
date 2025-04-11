@@ -1,0 +1,32 @@
+{
+  "T2I_Basic": {
+    "description": "Basic text to image generation with negative prompt support"
+  },
+  "I2I_Basic": {
+    "description": "Convert an input image to a new image based on text prompts"
+  },
+  "T2I_Upscale": {
+    "description": "Generate an image from text and upscale it with a 2-pass highres fix"
+  },
+  "T2I_Lora": {
+    "description": "Text to image generation with LoRA model support"
+  },
+  "I2I_Inpaint": {
+    "description": "Inpainting workflow with mask input"
+  },
+  "T2V_Basic": {
+    "description": "Generate a video from text using AnimateDiff"
+  },
+  "I2I_Controlnet_Canny": {
+    "description": "Image generation guided by canny edge detection"
+  },
+  "T2I_SDXL": {
+    "description": "Text to image using SDXL base and refiner models"
+  },
+  "T2I_Tiled": {
+    "description": "Generate large images using tiled vae decode"
+  },
+  "I2I_Style_Transfer": {
+    "description": "Transfer style from reference image to input image"
+  }
+}

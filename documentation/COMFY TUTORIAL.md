@@ -329,6 +329,7 @@ https://www.youtube.com/@latentvision/videos
 - https://github.com/1038lab/ComfyUI-OmniGen
 - https://github.com/lks-ai/anynode
 
+---
 
 ## TROUBLESHOOTING:  {#troubleshooting}
 - oh god, this would be a nearly endless section if I actually tried to be authoritative here.  I will start with just the main techniques that you'll be repeating endlessly til someone automates these:
