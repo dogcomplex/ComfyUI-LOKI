@@ -1,14 +1,13 @@
-
 # COMFYUI GUIDE
 This is a WIP guide to Open Source AI Image/Video/Text/Code Generation, centered around the ComfyUI Platform and all its possibilities.
 
 ## Table of Contents
 - [Level 0: Total Beginner](#level-0-total-beginner)
-- [Level 0.5: Casual GenAI](#level-05-casual-genai)
+- [Level 0.5: Casual GenAI](#level-05-casual-genai-cloud-hosted-comfyui)
 - [Level 1: Easy Local Official ComfyUI](#level-1-easy-local-official-comfyui)
 - [Level 2: Portable ComfyUI](#level-2-portable-comfyui)
 - [Level 3: Dockerized ComfyUI](#level-3-dockerized-comfyui)
-- [The State of AI](#state-of-ai)
+- [The State of AI](#state-of-ai-042025)
 - [Misc Resources](#misc-resources)
 - [FAQ](#faq)
 - [Troubleshooting](#troubleshooting)
@@ -17,7 +16,7 @@ It's my hope to continue updating this with advice for people at different skill
 
 ---
 
-## LEVEL 0:  Total Beginner  {#level-0-total-beginner}
+## LEVEL 0: Total Beginner
 Real advice: Just use <a href="https://chatgpt.com/">ChatGPT</a>
 
 ###### Image Gen: {#image-gen}
@@ -45,7 +44,7 @@ Note: while still 1/1000th the price of a film studio to generate videos, these 
 
 ---
 
-## LEVEL 0.5:  Casual GenAI:  Cloud-hosted ComfyUI  {#level-05-casual-genai}
+## LEVEL 0.5: Casual GenAI: Cloud-hosted ComfyUI
 - These still aren't local open source, as you're just feeding your data to some computer on the internet to do the work, but they sure are convenient - and they let you understand what ComfyUI is without any installation.   Many applications can be built with this style of ComfyUI stuff as a background engine
 https://comfyai.run/
 - modify green-box prompt, click Queue, observe it flow through the steps, image comes out
@@ -61,7 +60,7 @@ https://comfy.icu/workflows/_8ydGT-ekfLY3dXwddfZE/edit
 
 
 ---
-## LEVEL 1: Easy Local Official ComfyUI  {#level-1-easy-local-official-comfyui}
+## LEVEL 1: Easy Local Official ComfyUI
 - https://www.comfy.org/
 - official ComfyUI .exe application installer (with Windows, Mac and Linux versions!)
 - https://docs.comfy.org/installation/desktop/windows
@@ -83,7 +82,7 @@ https://comfy.icu/workflows/_8ydGT-ekfLY3dXwddfZE/edit
 
 
 
-## LEVEL 2: Portable ComfyUI  {#level-2-portable-comfyui}
+## LEVEL 2: Portable ComfyUI
 - Build ComfyUI slightly more versatile, on bare metal but portable enough you can move it and replicate multiple copies for different builds.  
 - Highly recommend putting it on an NTFS drive if running Windows so you can make virtual links to your model folders between each copy of comfy because you do *not* want to have to copy 500+GB of models.  And you will need at least that much storage space.
 - I did not do this, so now I'm into considerably more annoying Dockerized Comfyui instances which use virtual volumes.  At least that ups the security though, which is honestly a major concern on bare metal if you're downloading too many comfy extensions/custom_nodes.
@@ -94,7 +93,7 @@ https://comfy.icu/workflows/_8ydGT-ekfLY3dXwddfZE/edit
 
 ---
 
-## LEVEL 3: Dockerized ComfyUI  {#level-3-dockerized-comfyui}
+## LEVEL 3: Dockerized ComfyUI
 
 - This is where you end up if you care about security, reconfigurable builds that can just be spun up for any particular dependency chain, and control.  I personally am really not a fan of Docker in general, and find this all impossible to deal with unless you're an experienced programmer, but it does the trick for now. Ultimately we probably need to wrap a better interface around all this for a more user-friendly version, or bake individual ComfyUI builds in secure containers.  I don't see easy paths to getting normal non-technical people using Docker reliably though.
 - That said, <a href="https://comfydock.com/">Comfydock</a> at least tries to walk this path.  See the Pinokio section below
@@ -189,7 +188,7 @@ docker compose up --force-recreate
 - Note: I personally have only resorted to this crude self-configured docker stuff after wrestling with a 5090rtx's unique requirements.  An easier but still sometimes annoying option is to use:
 
 
-### Pinokio - Comfydock  {#pinokio-comfydock}
+### Pinokio - Comfydock
 - https://github.com/ComfyDock/ComfyDock-Pinokio
 - I somewhat-like this method and would endorse it for most people if I didn't occasionally still encounter bugs which are hard to diagnose.  It is *almost* a click-only no-code solution to setting up ComfyUI in dockerized containers though, which I admire the ambition of
 ##### Steps:  
@@ -211,7 +210,7 @@ net start winnat
 
 ---
 
-## STATE OF AI (04/2025):  {#state-of-ai}
+## STATE OF AI (04/2025)
 - Capabilities I'm keeping an eye on:
 
 #### Animation is suddenly cheap and easy now:
@@ -253,20 +252,20 @@ net start winnat
  
 ---
 
-## MISC RESOURCES:  {#misc-resources}
+## MISC RESOURCES
 https://www.reddit.com/r/comfyui/
 https://www.youtube.com/@pixaroma/videos
 https://www.youtube.com/@latentvision/videos
 - I'm a reader more than a listener, but I hear these are good video guides
 
-#### N8N  {#n8n}
+#### N8N
 - Starting to look into this node editor too.  Looks very useful, and integrated with Comfyui.  Will report back.
 - https://www.reddit.com/r/n8n/comments/1jbvt0a/i_built_a_free_browser_extension_that_creates/
 
 
 ---
 
-## FAQ  {#faq}
+## FAQ
 
 #### Q: Can comfyui workflows just be run in plain python without the interface?
 - A: Yep.  https://github.com/Chaoses-Ib/ComfyScript  Translates any workflow to a python script format.  Vice-versa is trickier but likely doable with an LLM to convert it back to a JSON workflow (on the TODO list)
@@ -331,7 +330,7 @@ https://www.youtube.com/@latentvision/videos
 
 ---
 
-## TROUBLESHOOTING:  {#troubleshooting}
+## TROUBLESHOOTING
 - oh god, this would be a nearly endless section if I actually tried to be authoritative here.  I will start with just the main techniques that you'll be repeating endlessly til someone automates these:
 
 #### Q:  My ComfyUI has broken!  It says Missing Nodes.
