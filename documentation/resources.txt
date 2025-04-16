@@ -1,0 +1,3 @@
+https://github.com/ComfyUI-Workflow/awesome-comfyui
+- great list for curated descriptions of node packages
+

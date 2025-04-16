@@ -309,10 +309,11 @@ https://www.youtube.com/@latentvision/videos
 - A:  Yes usually.... but you have to find the damn working nodes to do it.  We are still in stupidly early days it seems.  Also if/then branching works weirdly in ComfyUI as a declarative functional language than you might be used to
 - TODO workflow links
 
-### Q:  Can ComfyUI do 3d object generation?  AI speech?  Audio-video syncing?  XYZ?
+### Q:  Can ComfyUI do 3d object generation?  AI speech?  OCR?  Audio-video syncing?  XYZ?
 - A: Yes, yes, yes, probably.  Just search the dang thing in the Comfy Manager and try out the nodes yourself.  Good luck bug hunting.
 - 3D Vision: https://github.com/IsItDanOrAi/ComfyUI-Stereopsis
 - 3D models: https://github.com/kijai/ComfyUI-Hunyuan3DWrapper
+- OCR screen detection: https://github.com/smthemex/ComfyUI_OmniParser
 - ...more
 
 ### Q:  Why are you using ComfyUI when you could be using LangChain / OmniChain / n8n / Flowise  (LLM-oriented graph visual computing) ?
