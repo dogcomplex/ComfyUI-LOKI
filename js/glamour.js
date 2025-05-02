@@ -28,7 +28,7 @@ function updateBottomRightToggle() {
 
     const hasActiveGlamour = Array.from(glamourStates.values()).some(state => state);
     const iconSpan = bottomRightToggleButton.querySelector('.p-button-icon');
-    const icon = hasActiveGlamour ? "🧿" : "🦊";
+    const icon = hasActiveGlamour ? "🌘" : "🌕";
     const label = hasActiveGlamour ? "Veil All" : "Glamour All"; // Changed Unveil to Veil
 
     if (iconSpan) {
@@ -190,7 +190,7 @@ function createGlamourOverlay(node, inputName, inputData, app) {
                 const y_icon = -titleHeight + titleHeight / 2 + 7;
 
                 this.veilRegion = [node.size[0] - 25, -titleHeight, 25, titleHeight];
-                ctx.fillText("🌑", x, y_icon);
+                ctx.fillText("🌘", x, y_icon);
                 ctx.restore();
             }
             
