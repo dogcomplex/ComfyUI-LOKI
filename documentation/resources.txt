@@ -1,3 +1,5 @@
 https://github.com/ComfyUI-Workflow/awesome-comfyui
 - great list for curated descriptions of node packages
 
+https://github.com/MobinX/awesome-mcp-list/tree/main
+- MCP api list

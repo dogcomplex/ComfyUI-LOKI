@@ -38,7 +38,7 @@ Layers must match each other in functionality as closely as possible in *intent*
   - `TOKEN`: which is a unique identifier among all nodes, intended to be short and memorable to users. It is highly recommended that it start with (or entirely consist of) one or more EMOJIS which intuitively describe it. The `TOKEN` *may* be the emoji(s) with additional short text, e.g. `"🔍✋Detect"` for a node that searches for hands in an image. `TOKEN` should not include whitespace (use underscores sparingly instead).
   - `EMOJI_ICON`: which is a single emoji that visually represents the node's functionality but is non-unique (unlike the `TOKEN`). This is used as a default/fallback for the node's icon in the UI.
   - `RECIPE`: which takes the form of `<input tokens> => <output tokens>` and describes the node's functionality in a concise manner. Note pass-through tokens are just included on both sides. Try to use the canonical `TOKEN` form of inputs/outputs to describe this where applicable.
-  - `X2Y_FORMAT`: which describes the node's functionality in simple terms as if it were a workflow, using the `X2Y_FORMAT.txt` format.
+  - `X2Y_FORMAT`: which describes the node's functionality in simple terms as if it were a workflow, using the `X2Y_FORMAT.txt` format. e.g. T2I_Flux might be used for text-to-image Flux model generation.  It is suggested (but not required) that this format be used for `<node_name>` to begin with, though `X2Y_FORMAT` might be the capitalized or longer form of it.
   - `ALIASES`: which are alternative names for the node that are not the official name.
   - `TAGS`: which are additional keywords that can be used to find the node in the UIs and searches.
   - `METAPHORS`: which are creative alternative ways to envision the node's functionality from an artistic or conceptual perspective. They need not be precise, but should be intuitive to a non-technical audience.
@@ -47,14 +47,15 @@ Layers must match each other in functionality as closely as possible in *intent*
 - A JSON file that describes the node's inputs, outputs, naming, constants, and any other relevant information which is used across multiple layers and is not solely relevant to the particular layer's implementation. This the config file for the node.
 
 #### FUNCTIONALITY LAYER (PYTHON): `<node_name>.py`
+- AKA "LOKI SCRIPT" or "LOKI PYTHON"
 - A python file that contains the core implementation logic for the node. Should be system agnostic and designed to be consumed by python projects in general as an importable library. May have a `__main__` block for direct calling via command line with sensible arguments/behavior matching the input/output intent of the node in general. ComfyUI-specific implementation details may be included here, or optionally split out to `<node_name>_node.py`.
 
 #### INITIALIZATION LAYER: `__init__.py`
 - A ComfyUI-compatible python `__init__` wrapper file which ensures that the node is properly imported and registered within ComfyUI systems. It should specify `NODE_CLASS_MAPPINGS` and `NODE_DISPLAY_NAME_MAPPINGS`, exported with ``__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']``. These mappings should preferably pull from a `<node_name>.json` file, but may be specified directly within the `__init__.py` file if necessary.
 - Optionally: a node may have its own `requirements.txt` file, which should be used to describe this `<node_folder>`'s python package dependencies, and will be amalgamated by the `requirements.txt` file in the root of the project.
 
-
 #### FUNCTIONALITY LAYER (COMFY-NODE): `<node_name>_node.py`
+- AKA "LOKI NODE"
 - A python file that contains the ComfyUI-specific implementation details for the node. This should be a thin wrapper around the core implementation logic, and should not include any additional functionality or behavior.
 
 ---
@@ -69,11 +70,13 @@ These are not strictly necessary for functionality, and are generally not needed
 - Note that the node cache might also simply use the ComfyUI folder's official output folder directly - i.e. `folder_paths.get_output_directory()`. This is generally recommended if the cached output should be user-facing, though you may want to output it to a `<official_comfy>/output/LOKI/<node_name>/output` subfolder for organization, and remember that there might be multiple instances of this same node running so output file names better be unique or handle collisions.
 
 #### FUNCTIONALITY LAYER (COMFY-WORKFLOW): `<node_name>_workflow.json`
+- AKA "LOKI FLOW" or "LOKI WORKFLOW"
 - An alternative implementation of the node's functionality as a ComfyUI workflow composed of even more primitive nodes than itself. This workflow should NOT use the node itself (`<node_name>_node.py`), but should be entirely composed of *other* ComfyUI nodes or *other* LOKI nodes. Conceptually, this is using the ComfyUI framework to implement the node's functionality rather than using raw python (`<node_name>.py`).
 - These are rarely more efficient than the python implementation, but can be useful for testing the node's functionality and behavior in a real ComfyUI environment, or for demonstrating the node's functionality in a more intuitive way.
 - This illustrates the recursive nature of nodes, and the fact that nodes can be used as building blocks for more complex workflows.
 - Some nodes may be primarily implemented as a workflow (i.e. workflow-first), and may not have a python implementation at all, or may use ComfyScript (https://github.com/Chaoses-Ib/ComfyScript) or similar (https://github.com/atmaranto/ComfyUI-SaveAsScript) workflow-to-python translation techniques to use the workflow as a python script.
 - This is actually the eventual recommended implementation strategy for nodes, and should be used whenever possible once our ecosystem has matured enough to represent everything easily as nodes.
+
 
 #### TEST LAYER: `<node_name>_test.py`
 - A python file that coordinates any related tests for the node. This should be in the root node folder (`<node_folder>/<node_name>_test.py`). If verbose or requiring additional files/data/etc, those should be placed in the `./tests` subfolder, with `<node_name>_test.py` used as the main entrypoint. Note that simply by having so many different layered implementations of a node we naturally have a lot of test coverage, so create these additional ones sparingly.
@@ -82,8 +85,10 @@ These are not strictly necessary for functionality, and are generally not needed
 - Example implementations and executions would go in the `/tests/` subfolder, and would be named like `<node_name>_test_<example_name>.py` or `<node_name>_test_<example_name>.json` etc. Coordinated by `<node_name>_test.py`.
 - Tests should primarily focus on ensuring that the node's functionality and behavior is correct, and that it is consistent with the `REQUIREMENTS`. Tests that target specific implementation details (e.g. python specifics, rather than general requirements) should be marked separately.
 
-#### DOCUMENTATION LAYER: `<node_folder>/docs/` subfolder
-- A subfolder containing any additional documentation for the node. It should contain a `README.md` file with information about the node, as well as any other relevant documentation. It may contain images, diagrams, and other assets that help illustrate the node's functionality and behavior.
+#### DOCUMENTATION LAYER: 
+- `README.md` main handler
+- `<node_folder>/docs/` subfolder for additional documentation / formats / analysis / etc
+- A subfolder containing any additional documentation for the node. It may contain images, diagrams, and other assets that help illustrate the node's functionality and behavior.
 
 #### VISUAL LAYER: `<node_folder>/glamour/` subfolder
 - The visual representation of the node
@@ -102,6 +107,7 @@ These are not strictly necessary for functionality, and are generally not needed
   - `<node_folder>/folder.ico`
 - The icon will also be used for additional glamour assets.
 - `ICON` should be considered as an optional override to the node's fallback `EMOJI_ICON` (specified in `NAME` layer).
+- If we have a workflow, it should have a visual representation where the workflow is embedded in the metadata.  This could trivially be the icon, or could be more complex like the visual node representation (glamour) of the workflow itself.  Specify the filename for this in CONFIG but likely <node_folder>/<node_name>_workflow.png or similar.
 
 ##### GLAMOUR UI LAYER:
 - `<node_folder>/glamour/glamour.json` Describes the UI behavior of this node to be implemented with the `ComfyUI-LOKI/nodes/glamour` UI-generating node.
@@ -224,7 +230,7 @@ What follows is a likely timeline for the growth of a node, from lazy start to m
 - Level -1: A loose list somewhere pondering potential nodes to create.
 - Level 0: **ID:** You make the unique folder name.
 - Level 1: **CONTEXT:** Amalgamating loose notes about what the node might do and what other nodes out there do that's similar, figuring out if we even need this node at all. Skip this if you're already confident it's needed. (optional)
-- Level 2: **REQUIREMENTS:** Write out the requirements for the node. Could be skipped straight to implementation and done later.
+- Level 2: **REQUIREMENTS:** Write out the requirements for the node. Could be skipped straight to implementation and done later.  But keep in mind this is essentially the LLM prompt which everything else spins out of.
 - Level 3: **FUNCTIONALITY:** (pick one)
   - Level 3A (Node Route): `COMFY-NODE` - Implement the ComfyUI node in python. Just aim to have something you can throw into comfy. Add the `INITIALIZATION` stuff and you're good to go.
   - Level 3B (Workflow Route): `COMFY-WORKFLOW` - Implement what you need as a ComfyUI workflow using other existing nodes. Ignore the rest of this list, you already have a workflow.
@@ -247,5 +253,118 @@ What follows is a likely timeline for the growth of a node, from lazy start to m
 - Level 13: **SECURITY:** ZK-proof sign your node. Oh god, now it's on a blockchain?
 - Level 14: **CALCIFY:** Make it a cryptographically-proven private operation with no entropy leakage, or split that into a rock-hard sub-node with a softer governance/trust wrapper. Are we even programming any more or creating new Laws?
 --- **READY FOR POST-CENTRALIZED WORLD** ---
+
+
+
+
+# FUNCTIONAL FORMATS:
+
+### Python Script: 
+- just any python script, could be imported or a github repo or our own script.  No guarantees on format/usability (e.g. might not be easily importable or callable). Might not even be working!
+
+### LOKI Python Script (LOKI Script / LOKI Python): 
+- our own python wrapper around 3rd party Python code, or written from scratch.  Either way, guarantees it's callable via __main__ cmd line with all inputs specified and outputs to reasonable places (default <node_folder>/output/).  
+- Probably reserve --output as specifying output folder.  May have other standard reserved arguments.
+- Is expected to be treated as a standalone modular directly-callable script, though may have dependencies (requirements.txt etc).  
+-Must also be importable as a python module locally.  (Might extend this to make it available as a python LOKI package later. Not a current requirement.)  
+- May have dependencies on ComfyUI framework and custom_nodes e.g. if it's wrapping a custom node and converting it to a python script, or using ComfyScript.  Either way it needs to give the same python functionality guarantees.
+
+### ComfyUI Node: 
+- a regular comfyui node from a custom_nodes folder, which is likely a github repo with a bunch of nodes all interconnected and possibly nontrivial to extract individually.    
+
+### LOKI ComfyUI Node (LOKI Node): 
+- May be a wrapper around python or even a wrapper around another comfy node or workflow.  Regardless, intended to work as a standalone modular directly-usable node.  
+- Will have the same node compatibilities within the ComfyUI space as other LOKI nodes - e.g. Glamour, caching controls, etc.  These are not well defined yet as of this writing, but we'll likely have to set a stronger standard than most nodes, and will definitely have to store our own extra data/wrappers for nodes.
+- Likeliest complexity will be Glamour compatibility and metaphorical representation of the node, which we need to store in our caches.  It *is possible* to do that dynamically though and store in e.g. the <comfyui_root>/output/LOKI/<node_name>/glamour folder, but expect that will be a mirror of the cached defaults we store in LOKI for each other node.  Likelier we just go through the lists and make our own default glamours.  Basically expect that even if we're merely wrapping someone else's node, we're doing so much meta-analysis and visualization that it's its own thing.  Which is a damn good argument for just automating reverse-engineering of those and making our own standalone copy of every function out there... 
+
+### ComfyUI Workflow:
+- a regular comfyui workflow, typically a json file that might be in API format or not, might have messy execution flow or superfluous nodes, might have adult content, might have notes etc, might have a very particular visual arrangement, and likely has a big list of custom nodes it relies upon.  Might itself just be an image (or a video?) with the workflow embedded in it.
+
+### LOKI ComfyUI Workflow (LOKI Flow):
+- *Level 1:* A LOKI-style workflow should do one thing and do it well, with little other mess.  If it's a complex workflow, it's likely to be a wrapper around other nodes or workflows which do the (reusable, useful, modular) sub-tasks and has very little unique complexity to itself.
+- But the challenge to that is usually those sub-nodes or sub-workflows don't exist yet, so:
+- *Level 2:* We basically want to be able to represent any standard workflow as a single comfyui node which just recurses into those workflow steps (behind the scenes at least).  This was proven doable by the https://github.com/vivax3794/ComfyUI-Sub-Nodes project (now discontinued) so we have to reverse-engineer that into our own `workflow_node` node, probably, which just takes a workflow file and runs it as if it were a comfyui node.
+- We'll have to make sure that the workflow node can handle all the inputs and outputs of the nodes it recurses into, which may be a challenge - and Sub-Nodes didn't do that automatically, instead requiring people to manually insert Input / Output nodes that catch those.
+- We can likely get an LLM to do the Input/Output mapping easily (but requiring an LLM), or we can probably even use a default rule-of-thumb script to do it (e.g. look for every loose input field, every SaveAs output), but it's not entirely trivial on arbitrary workflows.  Might need to require minor conversion of the workflow .json to add those nodes (so users gotta do it themselves, or have an LLM do it).
+- But if we can at least just get Sub-Nodes functionality reliably working, we can split workflows into only small non-complex modular pieces that are easier to work with. (or easy to just write into python nodes/scripts that might implement the workflow faster).
+- Likely implementation path:  get ComfyScript (or that Save-as-script) thing to just convert workflows to python scripts and have that be what executes with our simulated workflow-node wrapper.  That should work fairly easily.  
+- *Level 3:* Now, more ambitious:  in all likelihood we're being opinionated on workflows already.  We might just want to be even *more* opinionated and do our own auto-rearranging or chopping up of them in practice.  So, input a standard comfyui workflow and we split them into a whole recursive structure of sub-workflows corresponding to our modular workflows (or creating new nodes/workflows if we notice some sub-steps are useful/interesting).  This should be doable with an LLM, but probably requires some custom code to do it.  So now we have a modular workflow standard.
+- *Level 4:* Main thing we're trying to eventually achieve though is the ability to use a workflow as if it were a node or a workflow interchangeably, and in the near future, be able to represent *any* node or python function as a workflow too, so that non-technical users can just follow the pretty graph along to see how it does things.  This means going back the other way: node => Workflow conversions.  But first just being able to visualize sub-workflows at all instead of just running them behind-the-scenes is more important.
+- We'll want our workflow node to be able to be expandable into the sub-workflow to show what's going on, which means new headaches of compatibility with the way comfyui views workflows.  
+- *Level 5:* Ideally we should be able to see live program flow as queues process through that sub-workflow, and then be able to minimize it back to the parent graph and continue seeing the execution.  
+- This should be recursive - drilling down as far as you can til you hit the most trivial nodes.  
+- This all doesn't even have to be how the node / workflow is implemented, these could be *virtual* workflows that just simulate what's happening possibly, but probably better to just genuinely break stuff down into workflows.
+- *Level 6:*  Now we have sub-workflows visualizable and have a full standard modular system for representing workflows.  Lets now start converting nodes to workflows too - have an LLM read through what the node does and recreate it as a series of primitive nodes in a new workflow.  That way any time we want to analyze what a node is doing we can just "drill down" into it and see the workflow code flow instead.  Then zoom back out to see the simplified parent graph.  All just different fidelities of the same thing.
+- *Level 7:*  Add in Glamours, which we should already have on a per-node basis by now fairly easily (see Node Glamours), but since any node can itself be represented as a workflow of nodes each with *their own* glamours, we can probably use some compounding metaphor for the different zoom levels so it feels like you're looking at the micro-world of a node.  This would probably just be another glamour metaphor, minorly influenced by its parent and the potential additional zoom-ins of its nodes.  Basically just trying to make a single all-encompassing metaphor for the entire macro/micro system of a workflow.
+- *Level 8:* Annnnd because the LOKI system as a whole is just a big bunch of workflows which can all be connected together to a single resource dispatcher, the entire system can all be represented as one super-macro workflow and that's the LOKI OS as a whole. 🦊  All one giant-ass metaphoric world that corresponds to actual program flows.  Actually, we can probably get this macro-system itself as early as Level 2.  It's just a long chain of workflows calling workflows.  But it takes the pretty visual navigation (and the ability to continue recursing down past the node level into workflow metaphors of nodes) to give it full breadth.
+- And of course, because we're stylish, we'll need to make this entire thing simply be a single image file of the LOKI "World" metaphor, which you can then drag into comfyui as a workflow, which installs the custom_nodes dependency of ComfyUI-LOKI, and thus bootloads the sub-workflows as well.  Our OS is a single image file! 🦊
+
+
+
+# FUNCTIONAL CONVERSIONS:
+
+### LOKI Script => LOKI Node:
+- Generally just trivially wrap the script in a comfy node class.  Should suffice for most cases.
+- We will add Glamour visuals etc later, but for just functionality it's a simple wrapper.
+
+### LOKI Script => LOKI Flow:
+- Convert to LOKI Script first (much easier).  Then we analyze them both to make this one
+- Much more complex, and we'll probably not do these for a while.  Requires a node library mimicking most of the python functionality, so we can recreate the same effect of the original script as a ComfyUI workflow (with LOKI standardization).
+- Probably pre-requisite would be to create nodes for each distinct python function in the script.  But we also dont want to be too micro (i.e. ideally the workflow should really just decompose into only a few sub-workflows, not a bunch of tiny nodes), so we actually want to split the script into its component pieces as macro as possible, focusing on what *this script* really adds to it that the subcomponents don't already cover.  Each of those subcomponents should be their own LOKI Node or LOKI Flow, and then we can use the workflow node to recursively expand them.
+- So likely our converter needs to be a smart introspection basically asking "how could we break this script down into its largest component pieces?"  And then we can just recursively apply that to each sub-piece, while being pragmatic about creating genuinely-useful subcomponents.  This will also cause massive node bloat.
+- Note that if the LOKI Script / LOKI Node is a wrapper around an external package we need the dependency of, then there's not much the LOKI Flow can do.  We can't actually recurse down into it - it's just a standalone single-node workflow.  Build it anyway though as there are bonus format things we probably want to do with it (e.g. put a Glamour node in it, forcing a ComfyUI-LOKI dependency to install the rest of the framework).
+
+### LOKI Node => LOKI Script:
+- Extract the functionality into the python script. Unlikely anything flows this direction though.
+- If the node is a wrapper around another ComfyUI node, then the script probably has to be a wrapper too.  We might be able to recreate/reverse-engineer it though and just make a hardcoded standalone script.
+- Consider dynamic vs hardcoded.  Might want separate nodes for the wrapper vs just our own version.
+
+### LOKI Node => LOKI Flow:
+- Convert to LOKI Script as well first (easy).  Then we analyze them both to make this one
+
+### LOKI Flow => LOKI Script:
+- MUCH easier than the other way around.  Just analyze the workflow and recreate it as a python script.  
+- If component parts are needed as dependencies, then use ComfyScript (https://github.com/Chaoses-Ib/ComfyScript) or similar (https://github.com/atmaranto/ComfyUI-SaveAsScript) to extract them as python-callable script.
+- Still need to wrap that and make sure it's callable via standard python and cmd line stuff.  This might be doable as a dynamic script/node (i.e. not using any LLM to do live conversions).
+- Probably do both: hardcoded conversions (easier, but if there are dependencies you're still doing most of the dynamic linking work anyway) and then dynamic linking (more flexible but harder to get right)
+
+
+### LOKI Flow => LOKI Node:
+- Similar to LOKI Script.  Do that first, then just wrap it back into a node probably.
+- We *could* just have a dynamic node that runs the workflow as if it were a node using the ComfyUI-Sub-Nodes project style.  It would allow any workflow to be run that way without an LLM doing this conversion.  But generally if we already own the whole workflow, we can just hardcode it down to a node.
+
+
+---
+
+
+### Python => LOKI Script: 
+- Easy.  Just needs to ensure LOKI guarantees of capability are met.  Simple scripts are doable with just LLM + testing loop.  
+- Complex scripts are just wrapped.  If wrapping a whole repo of dependencies store in `<node_folder>/src` and add a `<node_folder>/requirements.txt`.  Or just find a way to do it all as just a python import instead of needing the repo.
+- Ideally though (i.e. once we're in massive-framework-mode) break the complexity down into multiple smaller LOKI Scripts
+- Note that LOKI Scripts might often just use the same backend package to do *one thing* with some subset of the inputs / outputs.  So feel free to slice it into a single conceptual piece or many pieces.
+
+
+### Comfy Node => LOKI Node:
+- Probably want to just figure out what it's doing first and recreate as a LOKI Script first.  Then wrap it in a node.
+- challenge is basically reverse engineering someone's node.  Somewhat automateable but legal concerns possibly, and generally not needed (loses whatever their updates are).  Might be handy though for keeping things modular and reliable...  If we do this, we'll have to assess licensing/copyright and do it carefully.
+- Could also just *wrap* their nodes but maintain the wrapper here legally fine which keeps functional compatibility, but then there's still a dependency, and still iffy if we want to re-implement for e.g. python cmd
+- Easy enough with ComfyScript / Save-as-script path.
+- If we reverse engineer it or extract it directly (e.g. if it's totally open source), then should still expect to need to analyze the whole node's repo to make sure the node itself can be extracted cleanly.  Not trivial.
+- Probably:  if the node is something we can just recreate in python without dependencies or legal issues, just do that.  Unless the node author is really good and we want to rely on their updates.  Else it's better to just have it stable and reliable.
+- Else:  just wrap their node.  Probably using ComfyScript / Save-as-script, and having a dependency.
+- If the wrapper itself is generic, we probably dont even have to do wrapping - we'll just use their node directly.  Buuuut - we probably need to reserve the namespace in our list of nodes, as we'll probably be adding a glamour for it still.  Whiiich - might be best packaged and shared as just a wrapper node anyway.
+- I'm leaning towards recreating whenever possible, else wrapping. 
+- The nice thing about nodes though is they're at least already scoped about right, so we likely dont have to split them into multiple simpler nodes.
+- The easiest way to wrap a node *might be* to just make it a single-node workflow and then just start building out our recursive workflow stuff to use that.
+
+
+### Comfy Workflow => LOKI Flow:
+- This one might actually be easy.  We dont *have* to convert it to a script or node at all.  We can just store the workflow .json locally and turn it into a node later if we want to.
+- We might want to standardize it to have a limited set of inputs/outputs explicitly defined, but again - we dont *have* to do that.  We can just use the workflow as-is.
+- Its interesting...  ultimately the format we want everything in is ideally just gonna be LOKI Flows of every process into simpler sub-processes.  We don't actually even need LOKI Node or LOKI Script - those are just hardcoded versions which might make transition periods easier, or might be more efficient to actually run than the flows.  
+- I think it's still important to have all 3 usually, but we should be moving towards flows as the primary format.
+- Flows are also *far* more open and remixable than nodes or scripts if you have ComfyUI already.
+
+
 
 

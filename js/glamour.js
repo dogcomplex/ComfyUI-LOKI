@@ -260,6 +260,7 @@ function createGlamourOverlay(node, inputName, inputData, app) {
     };
 
     const overlay = $el("div.glamour-overlay", {
+        style: { display: 'none' },
         innerHTML: GlamourUI.createOverlayHTML(node, nodeTypeSnake, nodeHash),
         onclick: (e) => {
             if (e.target.classList.contains('glamour-toggle')) {
