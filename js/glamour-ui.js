@@ -184,6 +184,27 @@ export class GlamourUI {
                 transform: translate(-50%, -50%);
                 z-index: 10;
             }
+
+            /* Glamour Toggle Button Animation */
+            #glamour-toggle-button {
+                transition: opacity 0.3s ease, transform 0.3s ease;
+                opacity: 1;
+                transform: scale(1);
+            }
+            #glamour-toggle-button.glamour-hidden {
+                opacity: 0;
+                transform: scale(0.8);
+                pointer-events: none;
+            }
+
+            /* Veil Icon Animation (applied via JS) */
+            .glamour-veil-icon {
+                transition: opacity 0.3s ease;
+                opacity: 1;
+            }
+            .glamour-veil-icon.glamour-hidden {
+                opacity: 0;
+            }
         `;
         document.head.appendChild(style);
     }

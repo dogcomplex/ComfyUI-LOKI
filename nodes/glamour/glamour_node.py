@@ -6,8 +6,13 @@ from .glamour_utils import GlamourImageManager
 class GlamourNode:
     @classmethod
     def INPUT_TYPES(cls):
-        # Keep input types simple for the node itself
-        return {"required": {}} # No direct inputs needed for the UI functionality
+        # Add a boolean widget to control the overall feature
+        return {
+            "required": {
+                "enable_controls": ("BOOLEAN", {"default": True}),
+                "glamour_state": (["All Glamoured", "Mixed", "All Veiled"],)
+            }
+        }
 
     RETURN_TYPES = () # This node primarily affects the UI, doesn't return workflow data
     FUNCTION = "do_nothing" # Needs a function, even if it does nothing in the backend flow
