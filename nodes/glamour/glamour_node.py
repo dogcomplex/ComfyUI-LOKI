@@ -10,7 +10,8 @@ class GlamourNode:
         return {
             "required": {
                 "enable_controls": ("BOOLEAN", {"default": True}),
-                "glamour_state": (["All Glamoured", "Mixed", "All Veiled"],)
+                "glamour_state": (["All Glamoured", "Mixed", "All Veiled"],),
+                "transparency": ("BOOLEAN", {"default": True, "label_on": "Transparent Overlay", "label_off": "Opaque Overlay"})
             }
         }
 

@@ -3,7 +3,7 @@ export class GlamourUI {
     static AURORA_GRADIENT = 'linear-gradient(90deg, rgba(255, 0, 150, 0.7), rgba(0, 255, 255, 0.5), rgba(0, 255, 255, 0.7))';
     static GLAMOUR_NODE_TYPE = "Glamour 🦊";
     
-    static updateOverlayStyles(overlay, transform, nodeWidth, fullHeight, relativeScale, visible) {
+    static updateOverlayStyles(overlay, transform, nodeWidth, fullHeight, relativeScale, visible, isTransparencyEnabled) {
         Object.assign(overlay.style, {
             left: `${transform.e + transform.clientRectBound.left}px`,
             top: `${transform.f + transform.clientRectBound.top - transform.headerHeight * transform.d}px`,
@@ -19,11 +19,11 @@ export class GlamourUI {
         // Scale content relative to node size
         const innerContent = overlay.firstElementChild;
         if (innerContent) {
-            this.updateInnerContent(innerContent, relativeScale);
+            this.updateInnerContent(innerContent, relativeScale, isTransparencyEnabled);
         }
     }
 
-    static updateInnerContent(element, scale) {
+    static updateInnerContent(element, scale, isTransparencyEnabled) {
         Object.assign(element.style, {
             width: "100%",
             height: "100%",
@@ -37,12 +37,24 @@ export class GlamourUI {
             fontSize: `${12 * scale}px`,
             background: this.AURORA_GRADIENT,
             backgroundSize: '400% 400%',
-            animation: 'northernLights 10s ease-in-out infinite',
-            maskImage: 'radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0))',
-            WebkitMaskImage: 'radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0))',
-            mixBlendMode: 'lighten',
-            opacity: '0.9'
+            animation: 'northernLights 10s ease-in-out infinite'
         });
+
+        if (isTransparencyEnabled) {
+            Object.assign(element.style, {
+                maskImage: 'radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0))',
+                WebkitMaskImage: 'radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0))',
+                mixBlendMode: 'lighten',
+                opacity: '0.9'
+            });
+        } else {
+            Object.assign(element.style, {
+                maskImage: 'none',
+                WebkitMaskImage: 'none',
+                mixBlendMode: 'normal',
+                opacity: '1'
+            });
+        }
 
         // Add webkit scrollbar style directly to element
         element.style.setProperty("-webkit-scrollbar", "none");

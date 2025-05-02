@@ -13,6 +13,9 @@ let glamourStates = new Map(); // node.id -> boolean
 let isGlamourMasterEnabled = true;
 let glamourNodeInstance = null; // Keep track of the Glamour node
 
+// Transparency state
+let isTransparencyEnabled = true;
+
 // Reference to the new button group toggle
 let bottomRightToggleButton = null;
 // Reference to the custom tooltip element
@@ -207,6 +210,9 @@ function createGlamourOverlay(node, inputName, inputData, app) {
                 const fullHeight = (node.size[1] + headerHeight) * transform.d;
                 const relativeScale = (nodeWidth / transform.a) / 400;
                 
+                // Calculate visibility for the overlay element itself
+                const overlayVisible = isGlamourMasterEnabled && isActive; // Combine master and node state
+
                 GlamourUI.updateOverlayStyles(
                     this.overlay,
                     {
@@ -220,7 +226,8 @@ function createGlamourOverlay(node, inputName, inputData, app) {
                     nodeWidth,
                     fullHeight,
                     relativeScale,
-                    isActive
+                    overlayVisible, // Ensure combined visibility is passed as 6th arg
+                    isTransparencyEnabled // Ensure transparency state is passed as 7th arg
                 );
             }
         },
@@ -456,6 +463,17 @@ function handleMasterGlamourToggle(enabled) {
     app.graph.setDirtyCanvas(true); // Redraw canvas
 }
 
+// Function to handle the transparency toggle
+function handleTransparencyChange(enabled) {
+    if (enabled === isTransparencyEnabled) return;
+
+    isTransparencyEnabled = enabled;
+    console.log(`Overlay transparency ${enabled ? 'enabled' : 'disabled'}`);
+
+    // Need to redraw all nodes to update their overlay styles
+    app.graph.setDirtyCanvas(true);
+}
+
 // Function to update the state widget based on current glamourStates
 function updateGlamourStateWidget() {
     if (!glamourStateWidget || !glamourNodeInstance || !isGlamourMasterEnabled) {
@@ -679,6 +697,7 @@ app.registerExtension({
                     }
 
                     glamourStateWidget = this.widgets.find(w => w.name === "glamour_state");
+                    const transparencyWidget = this.widgets.find(w => w.name === "transparency");
 
                     if (glamourStateWidget) {
                         const originalStateCallback = glamourStateWidget.callback;
@@ -702,6 +721,18 @@ app.registerExtension({
                         // Set initial widget state based on current nodes
                         setTimeout(updateGlamourStateWidget, 0); // Defer slightly
                     }
+
+                    if (transparencyWidget) {
+                        const originalTransparencyCallback = transparencyWidget.callback;
+                        transparencyWidget.callback = (value) => {
+                            setTimeout(() => handleTransparencyChange(value), 0);
+                            if (originalTransparencyCallback) {
+                                return originalTransparencyCallback.call(this, value);
+                            }
+                        };
+                        // Trigger initial state
+                        setTimeout(() => handleTransparencyChange(transparencyWidget.value), 0);
+                    }
                 }
                 return r;
             };
@@ -719,6 +750,8 @@ app.registerExtension({
                     // We might need to call updateGlamourStateWidget here if the loaded
                     // value doesn't match the actual node states.
                     setTimeout(updateGlamourStateWidget, 50); // Update widget based on actual state after a small delay
+                } else if (property === "transparency") {
+                    setTimeout(() => handleTransparencyChange(value), 0);
                 }
                 return r;
             }
