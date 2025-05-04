@@ -33,8 +33,8 @@ function updateBottomRightToggle() {
     
     const hasActiveGlamour = Array.from(glamourStates.values()).some(state => state);
     const iconSpan = bottomRightToggleButton.querySelector('.p-button-icon');
-    const icon = hasActiveGlamour ? "🌘" : "🌕";
-    const label = hasActiveGlamour ? "Veil All" : "Glamour All"; // Changed Unveil to Veil
+    const icon = hasActiveGlamour ? "🌔" : "🌘";
+    const label = hasActiveGlamour ? "Veil All" : "Glamour All";
 
     if (iconSpan) {
         iconSpan.textContent = icon;

@@ -75,7 +75,7 @@ export class GlamourUI {
                             window.glamourStates.set(nodeId, newState);
                             
                             // Update button UI
-                            toggleButton.textContent = newState ? '🌘' : '🌗';
+                            toggleButton.textContent = newState ? '🌘' : '🌔';
                             toggleButton.title = newState ? 'Disable Glamour' : 'Enable Glamour';
                             
                             // Update global UI
@@ -105,7 +105,7 @@ export class GlamourUI {
                         const nodeId = overlay.getAttribute('data-node-id');
                         if (nodeId) {
                             const isEnabled = window.glamourStates.get(nodeId) === true;
-                            toggleButton.textContent = isEnabled ? '🌘' : '🌗';
+                            toggleButton.textContent = isEnabled ? '🌘' : '🌔';
                             toggleButton.title = isEnabled ? 'Disable Glamour' : 'Enable Glamour';
                         }
                     }
