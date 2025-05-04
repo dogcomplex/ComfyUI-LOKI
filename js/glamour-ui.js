@@ -76,42 +76,6 @@ export class GlamourUI {
                             toggleButton.textContent = newState ? '🌘' : '🌗';
                             toggleButton.title = newState ? 'Disable Glamour' : 'Enable Glamour';
                             
-                            // Directly manipulate the glamour elements in the DOM
-                            // 1. The node's overlay element
-                            const glamourOverlay = document.querySelector(`[data-node-id="${nodeId}"]`);
-                            if (glamourOverlay) {
-                                // Don't hide the entire overlay as it contains our toggle button!
-                                // Instead target just the visual elements inside it
-                                
-                                // Control the aurora effect specifically
-                                const aurora = glamourOverlay.querySelector('.glamour-aurora');
-                                if (aurora) {
-                                    aurora.style.display = newState ? 'block' : 'none';
-                                }
-                                
-                                // Control the image specifically
-                                const imageElement = glamourOverlay.querySelector('.glamour-image');
-                                if (imageElement) {
-                                    imageElement.style.display = newState ? 'block' : 'none';
-                                }
-                                
-                                // Control the glamour content (but keep text visible for the toggle button)
-                                const content = glamourOverlay.querySelector('.glamour-content');
-                                if (content) {
-                                    // Update the content styles without hiding the text/button
-                                    if (!newState) {
-                                        // Remove aurora/glamour styling when disabled
-                                        content.style.background = 'transparent';
-                                        content.style.animation = 'none';
-                                    } else {
-                                        // Re-apply the aurora styling when enabled
-                                        content.style.background = GlamourUI.AURORA_GRADIENT;
-                                        content.style.backgroundSize = '400% 400%';
-                                        content.style.animation = 'northernLights 10s ease-in-out infinite';
-                                    }
-                                }
-                            }
-                            
                             // Update global UI
                             if (typeof window.updateBottomRightToggle === 'function') {
                                 window.updateBottomRightToggle();
@@ -164,21 +128,13 @@ export class GlamourUI {
             animation: 'northernLights 10s ease-in-out infinite'
         });
 
-        if (isTransparencyEnabled) {
-            Object.assign(element.style, {
-                maskImage: 'radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0))',
-                WebkitMaskImage: 'radial-gradient(circle, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0))',
-                mixBlendMode: 'lighten',
-                opacity: '0.9'
-            });
-        } else {
-            Object.assign(element.style, {
-                maskImage: 'none',
-                WebkitMaskImage: 'none',
-                mixBlendMode: 'normal',
-                opacity: '1'
-            });
-        }
+        // Remove conditional transparency styling from here
+        Object.assign(element.style, {
+            maskImage: 'none',
+            WebkitMaskImage: 'none',
+            mixBlendMode: 'normal', // Keep it simple, blending is complex with DOM overlays
+            opacity: '1' // Keep it fully opaque unless image sets transparency
+        });
 
         // Add webkit scrollbar style directly to element
         element.style.setProperty("-webkit-scrollbar", "none");
