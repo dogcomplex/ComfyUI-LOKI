@@ -4,6 +4,7 @@ export class GlamourUI {
     static GLAMOUR_NODE_TYPE = "Glamour 🦊";
     
     static updateOverlayStyles(overlay, transform, nodeWidth, fullHeight, relativeScale, visible, isTransparencyEnabled) {
+        console.log(`[Glamour] updateOverlayStyles received isTransparencyEnabled: ${isTransparencyEnabled}, visible: ${visible}`);
         Object.assign(overlay.style, {
             left: `${transform.e + transform.clientRectBound.left}px`,
             top: `${transform.f + transform.clientRectBound.top - transform.headerHeight * transform.d}px`,
@@ -19,11 +20,135 @@ export class GlamourUI {
         // Scale content relative to node size
         const innerContent = overlay.firstElementChild;
         if (innerContent) {
-            this.updateInnerContent(innerContent, relativeScale, isTransparencyEnabled);
+            this.updateInnerContent(innerContent, isTransparencyEnabled);
+
+            // Find the text element and apply scaling
+            const canvasScale = app.canvas.ds.scale; // Get canvas zoom
+            const textElement = innerContent.querySelector('.glamour-text');
+            if (textElement && canvasScale > 0) { // Add check for canvasScale > 0
+                const baseFontSize = 12; // Base font size
+                const newSize = baseFontSize * canvasScale;
+                textElement.style.fontSize = `${newSize}px`;
+                
+                // Scale padding proportionally
+                const basePadding = 8; // Base padding in pixels
+                const newPadding = Math.max(4, basePadding * canvasScale);
+                textElement.style.padding = `${newPadding}px ${newPadding * 1.5}px`;
+                
+                // Scale border radius
+                const baseRadius = 8; // Base border radius
+                const newRadius = Math.max(4, baseRadius * canvasScale);
+                textElement.style.borderRadius = `${newRadius}px`;
+                
+                // Scale bottom margin
+                const baseBottom = 5; // Base bottom position
+                const newBottom = Math.max(2, baseBottom * canvasScale);
+                textElement.style.bottom = `${newBottom}px`;
+                
+                // Set up toggle button
+                const toggleButton = textElement.querySelector('.glamour-toggle');
+                if (toggleButton && !toggleButton.hasInitializedListener) {
+                    toggleButton.hasInitializedListener = true;
+                    toggleButton.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent click from bubbling up
+                        e.preventDefault(); // Prevent any default action
+                        
+                        const nodeId = overlay.getAttribute('data-node-id');
+                        console.log(`Glamour toggle clicked for node ${nodeId}`);
+                        
+                        if (nodeId) {
+                            // Get node reference directly
+                            const node = app.graph._nodes.find(n => n.id.toString() === nodeId.toString());
+                            if (!node) {
+                                console.error(`Node ${nodeId} not found`);
+                                return;
+                            }
+                            
+                            // Toggle state with strict boolean
+                            const currentState = window.glamourStates.get(nodeId) === true;
+                            const newState = !currentState;
+                            console.log(`Toggling node ${nodeId} glamour: ${currentState} -> ${newState}`);
+                            
+                            // Set in the global map
+                            window.glamourStates.set(nodeId, newState);
+                            
+                            // Update button UI
+                            toggleButton.textContent = newState ? '🌘' : '🌗';
+                            toggleButton.title = newState ? 'Disable Glamour' : 'Enable Glamour';
+                            
+                            // Directly manipulate the glamour elements in the DOM
+                            // 1. The node's overlay element
+                            const glamourOverlay = document.querySelector(`[data-node-id="${nodeId}"]`);
+                            if (glamourOverlay) {
+                                // Don't hide the entire overlay as it contains our toggle button!
+                                // Instead target just the visual elements inside it
+                                
+                                // Control the aurora effect specifically
+                                const aurora = glamourOverlay.querySelector('.glamour-aurora');
+                                if (aurora) {
+                                    aurora.style.display = newState ? 'block' : 'none';
+                                }
+                                
+                                // Control the image specifically
+                                const imageElement = glamourOverlay.querySelector('.glamour-image');
+                                if (imageElement) {
+                                    imageElement.style.display = newState ? 'block' : 'none';
+                                }
+                                
+                                // Control the glamour content (but keep text visible for the toggle button)
+                                const content = glamourOverlay.querySelector('.glamour-content');
+                                if (content) {
+                                    // Update the content styles without hiding the text/button
+                                    if (!newState) {
+                                        // Remove aurora/glamour styling when disabled
+                                        content.style.background = 'transparent';
+                                        content.style.animation = 'none';
+                                    } else {
+                                        // Re-apply the aurora styling when enabled
+                                        content.style.background = GlamourUI.AURORA_GRADIENT;
+                                        content.style.backgroundSize = '400% 400%';
+                                        content.style.animation = 'northernLights 10s ease-in-out infinite';
+                                    }
+                                }
+                            }
+                            
+                            // Update global UI
+                            if (typeof window.updateBottomRightToggle === 'function') {
+                                window.updateBottomRightToggle();
+                            }
+                            if (typeof window.updateGlamourStateWidget === 'function') {
+                                window.updateGlamourStateWidget();
+                            }
+                            
+                            // Force multiple redraws
+                            app.graph.setDirtyCanvas(true, true);
+                            
+                            // Try to trigger a real node redraw 
+                            if (node.onDrawBackground) {
+                                requestAnimationFrame(() => {
+                                    app.graph.setDirtyCanvas(true, true);
+                                });
+                            }
+                        } else {
+                            console.error('No nodeId found on overlay element');
+                        }
+                    });
+                    
+                    // Initial button state
+                    if (window.glamourStates && typeof window.glamourStates.get === 'function') {
+                        const nodeId = overlay.getAttribute('data-node-id');
+                        if (nodeId) {
+                            const isEnabled = window.glamourStates.get(nodeId) === true;
+                            toggleButton.textContent = isEnabled ? '🌘' : '🌗';
+                            toggleButton.title = isEnabled ? 'Disable Glamour' : 'Enable Glamour';
+                        }
+                    }
+                }
+            }
         }
     }
 
-    static updateInnerContent(element, scale, isTransparencyEnabled) {
+    static updateInnerContent(element, isTransparencyEnabled) {
         Object.assign(element.style, {
             width: "100%",
             height: "100%",
@@ -34,7 +159,6 @@ export class GlamourUI {
             flexDirection: "column",
             boxSizing: "border-box",
             padding: "0",
-            fontSize: `${12 * scale}px`,
             background: this.AURORA_GRADIENT,
             backgroundSize: '400% 400%',
             animation: 'northernLights 10s ease-in-out infinite'
@@ -58,16 +182,6 @@ export class GlamourUI {
 
         // Add webkit scrollbar style directly to element
         element.style.setProperty("-webkit-scrollbar", "none");
-        
-        // Scale all child elements proportionally
-        Array.from(element.children).forEach(child => {
-            Object.assign(child.style, {
-                transform: "none",
-                fontSize: "inherit",
-                padding: "0",
-                margin: "0"
-            });
-        });
     }
 
     static setBackgroundImage(element, imageSrc) {
@@ -126,7 +240,7 @@ export class GlamourUI {
 
     static createNodeContent(node, nodeTypeSnake, nodeHash) {
         return `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <div>
                     <h3 style="margin: 0; color: #333;">✨ ${node.type} ✨</h3>
                     <div class="node-hash" style="
@@ -136,6 +250,19 @@ export class GlamourUI {
                         font-family: monospace;
                         word-break: break-all;
                     ">${nodeTypeSnake}_${node.id}_${nodeHash}</div>
+                </div>
+                <div>
+                    <button class="glamour-toggle" style="
+                        background: none;
+                        border: none;
+                        font-size: 1.2em;
+                        cursor: pointer;
+                        padding: 4px;
+                        margin: 0;
+                        border-radius: 4px;
+                        transition: background-color 0.2s;
+                        pointer-events: auto;
+                    ">🌘</button>
                 </div>
             </div>
         `;
@@ -180,21 +307,29 @@ export class GlamourUI {
 
             .glamour-overlay:hover .glamour-text {
                 opacity: 1 !important;
-                pointer-events: all;
             }
 
             .glamour-text {
                 opacity: 0;
                 transition: opacity 0.3s ease;
-                pointer-events: none;
+                pointer-events: auto;
                 background: rgba(255,255,255,0.85);
-                padding: 15px;
                 border-radius: 8px;
                 position: absolute;
-                top: 50%;
+                bottom: 5px;
                 left: 50%;
-                transform: translate(-50%, -50%);
+                transform: translateX(-50%);
+                text-align: center;
                 z-index: 10;
+            }
+
+            .glamour-text .glamour-toggle {
+                pointer-events: auto !important;
+                cursor: pointer;
+            }
+            
+            .glamour-toggle:hover {
+                background-color: rgba(0,0,0,0.1);
             }
 
             /* Glamour Toggle Button Animation */
@@ -265,7 +400,7 @@ export class GlamourUI {
                 <div class="glamour-text" style="
                     position: relative;
                     background: rgba(255,255,255,0.85);
-                    padding: 15px;
+                    padding: 8px 12px;
                     border-radius: 8px;
                     z-index: 3;
                     opacity: 0;
@@ -276,5 +411,13 @@ export class GlamourUI {
                 </div>
             </div>
         `;
+    }
+
+    static createOverlay(node, nodeType, nodeHash) {
+        const overlay = document.createElement('div');
+        overlay.className = 'glamour-overlay';
+        overlay.setAttribute('data-node-id', node.id);
+        overlay.innerHTML = this.createOverlayHTML(node, nodeType, nodeHash);
+        return overlay;
     }
 } 

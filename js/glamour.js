@@ -8,6 +8,8 @@ let allGlamours = new Set();
 
 // Track glamours per node
 let glamourStates = new Map(); // node.id -> boolean
+// Make glamourStates accessible globally
+window.glamourStates = glamourStates;
 
 // Master Glamour control state
 let isGlamourMasterEnabled = true;
@@ -28,7 +30,7 @@ let settingWidgetInternally = false;
 
 function updateBottomRightToggle() {
     if (!bottomRightToggleButton) return;
-
+    
     const hasActiveGlamour = Array.from(glamourStates.values()).some(state => state);
     const iconSpan = bottomRightToggleButton.querySelector('.p-button-icon');
     const icon = hasActiveGlamour ? "🌘" : "🌕";
@@ -48,6 +50,8 @@ function updateBottomRightToggle() {
          bottomRightToggleButton.setAttribute('aria-label', label);
     }
 }
+// Make the function globally available
+window.updateBottomRightToggle = updateBottomRightToggle;
 
 function generateNodeHash(node) {
     const stableValues = {
@@ -138,14 +142,16 @@ function createGlamourOverlay(node, inputName, inputData, app) {
     }
 
     const isGlamourNode = node.type === GlamourUI.GLAMOUR_NODE_TYPE;
-    // Set initial state, default to true unless it's the specific Glamour node type
-    if (!glamourStates.has(node.id) || !isGlamourMasterEnabled) {
-        glamourStates.set(node.id, !isGlamourNode && isGlamourMasterEnabled);
+    // Set initial state, default to false unless explicitly set true
+    if (!glamourStates.has(node.id)) {
+        const initialState = !isGlamourNode && isGlamourMasterEnabled;
+        console.log(`Setting initial glamour state for node ${node.id} to: ${initialState}`);
+        glamourStates.set(node.id, initialState);
     }
-
+    
     const headerHeight = LiteGraph.NODE_TITLE_HEIGHT;
     const nodeTypeSnake = GlamourUI.snakeCase(node.type);
-    const nodeHash = generateNodeHash(node);
+    const nodeIdHash = generateNodeHash(node);
 
     const updateHashDisplay = (overlay) => {
         const hashDisplay = overlay.querySelector('.node-hash');
@@ -180,7 +186,8 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         name: `w${inputName}`,
         
         draw: function(ctx, node, widgetWidth, y, widgetHeight) {
-            const isActive = glamourStates.get(node.id) ?? true;
+            const isActive = glamourStates.get(node.id) === true;
+            
             // Only draw veil icon if master enabled and node is inactive
             if (isGlamourMasterEnabled && !isActive) {
                 ctx.save();
@@ -211,8 +218,8 @@ function createGlamourOverlay(node, inputName, inputData, app) {
                 const relativeScale = (nodeWidth / transform.a) / 400;
                 
                 // Calculate visibility for the overlay element itself
-                const overlayVisible = isGlamourMasterEnabled && isActive; // Combine master and node state
-
+                const overlayVisible = isGlamourMasterEnabled && isActive;
+                
                 GlamourUI.updateOverlayStyles(
                     this.overlay,
                     {
@@ -226,9 +233,19 @@ function createGlamourOverlay(node, inputName, inputData, app) {
                     nodeWidth,
                     fullHeight,
                     relativeScale,
-                    overlayVisible, // Ensure combined visibility is passed as 6th arg
-                    isTransparencyEnabled // Ensure transparency state is passed as 7th arg
+                    overlayVisible,
+                    isTransparencyEnabled
                 );
+                
+                // Also control the glamour content and aurora visibility based on state
+                const content = this.overlay.querySelector('.glamour-content');
+                if (content) {
+                    // Control the aurora directly
+                    const aurora = content.querySelector('.glamour-aurora');
+                    if (aurora) {
+                        aurora.style.display = isActive ? 'block' : 'none';
+                    }
+                }
             }
         },
         
@@ -261,26 +278,7 @@ function createGlamourOverlay(node, inputName, inputData, app) {
 
     const overlay = $el("div.glamour-overlay", {
         style: { display: 'none' },
-        innerHTML: GlamourUI.createOverlayHTML(node, nodeTypeSnake, nodeHash),
-        onclick: (e) => {
-            if (e.target.classList.contains('glamour-toggle')) {
-                glamourStates.set(node.id, false);
-                updateBottomRightToggle(); // Update the global toggle state representation
-                updateGlamourStateWidget(); // Update the combo box state
-                app.graph.setDirtyCanvas(true);
-
-                // If tooltip is currently visible, update its text immediately
-                if (glamourTooltipElement && glamourTooltipElement.style.display === 'block') {
-                    const currentLabel = "Veil All";
-                    glamourTooltipElement.textContent = currentLabel;
-                    // Reposition slightly in case text length change affected width
-                    const groupRect = bottomRightToggleButton.parentElement?.getBoundingClientRect();
-                    if (groupRect) {
-                        glamourTooltipElement.style.left = `${groupRect.left - glamourTooltipElement.offsetWidth - 5}px`;
-                    }
-                }
-            }
-        },
+        innerHTML: GlamourUI.createOverlayHTML(node, nodeTypeSnake, nodeIdHash),
         onchange: (e) => {
             if (e.target.classList.contains('glamour-input')) {
                 updateWidgetValue(e.target.dataset.widget, e.target.value);
@@ -357,27 +355,46 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         return false;
     };
 
+    // Replace original drawing with our own implementation
     const originalDrawBackground = node.onDrawBackground;
     node.onDrawBackground = function(ctx) {
+        // Always draw original background
         if (originalDrawBackground) {
             originalDrawBackground.apply(this, arguments);
         }
-
-        // Only load/draw image if node's glamour is active AND master is enabled
-        if (isGlamourMasterEnabled && glamourStates.get(this.id)) {
-            loadGlamourImage(this, ctx);
+        
+        // Only draw glamour if explicitly enabled
+        const isNodeGlamoured = glamourStates.get(this.id) === true;
+        const shouldShowGlamour = isGlamourMasterEnabled && isNodeGlamoured;
+        
+        if (shouldShowGlamour) {
+            // Get current hash for the node
+            const currentHash = generateNodeHash(this);
+            
+            // Call image manager to load and render image
+            GlamourImageManager.loadImage(this, ctx, currentHash, drawGlamourImage);
         }
     };
 
     return widget;
 }
 
+// Function to handle the glamour image for a node
 function loadGlamourImage(node, ctx) {
-    const nodeHash = generateNodeHash(node);
-    GlamourImageManager.loadImage(node, ctx, nodeHash, drawGlamourImage);
+    if (!node) return;
+    
+    // Only proceed if glamour is actually enabled for this node
+    const isNodeGlamoured = glamourStates.get(node.id) === true;
+    if (!isNodeGlamoured) return;
+    
+    const currentHash = generateNodeHash(node);
+    GlamourImageManager.loadImage(node, ctx, currentHash, drawGlamourImage);
 }
 
+// Function to draw the glamour image
 function drawGlamourImage(img, node, ctx) {
+    if (!node || !ctx || !img) return;
+    
     ctx.save();
     
     const scale = Math.min(
@@ -404,16 +421,22 @@ function drawGlamourImage(img, node, ctx) {
     GlamourImageManager.updateOverlayImage(node.id, img.src);
 }
 
+// Support function that adds glamour to a node
 function addGlamourImageSupport(node) {
+    if (!node) return;
+    
     const originalDrawBackground = node.onDrawBackground;
     node.onDrawBackground = function(ctx) {
-        if (!glamourStates.get(this.id)) {
-            if (originalDrawBackground) {
-                originalDrawBackground.apply(this, arguments);
-            }
-            return;
+        // Always draw the original background first
+        if (originalDrawBackground) {
+            originalDrawBackground.apply(this, arguments);
         }
-        loadGlamourImage(this, ctx);
+        
+        // Only draw glamour if this node has it enabled
+        const isGlamoured = glamourStates.get(this.id) === true;
+        if (isGlamourMasterEnabled && isGlamoured) {
+            loadGlamourImage(this, ctx);
+        }
     };
 }
 
@@ -465,10 +488,18 @@ function handleMasterGlamourToggle(enabled) {
 
 // Function to handle the transparency toggle
 function handleTransparencyChange(enabled) {
-    if (enabled === isTransparencyEnabled) return;
+    console.log(`[Glamour] handleTransparencyChange received: value=${enabled}, type=${typeof enabled}`);
 
-    isTransparencyEnabled = enabled;
-    console.log(`Overlay transparency ${enabled ? 'enabled' : 'disabled'}`);
+    // Ensure comparison uses boolean values
+    const newState = !!enabled; // Coerce received value to boolean
+
+    if (newState === isTransparencyEnabled) {
+        console.log(`[Glamour] Transparency state already ${isTransparencyEnabled}, skipping update.`);
+        return;
+    }
+
+    isTransparencyEnabled = newState; // Assign the coerced boolean value
+    console.log(`[Glamour] handleTransparencyChange: Setting isTransparencyEnabled to ${isTransparencyEnabled} (type: ${typeof isTransparencyEnabled})`);
 
     // Need to redraw all nodes to update their overlay styles
     app.graph.setDirtyCanvas(true);
@@ -510,6 +541,46 @@ function updateGlamourStateWidget() {
        settingWidgetInternally = false;
     }
 }
+// Make the function globally available
+window.updateGlamourStateWidget = updateGlamourStateWidget;
+
+// Function to directly toggle a specific node's glamour state
+function toggleNodeGlamour(nodeId, forceState) {
+    if (!nodeId) {
+        console.error("No nodeId provided to toggleNodeGlamour");
+        return;
+    }
+    
+    // Get current state or default to false
+    const currentState = glamourStates.get(nodeId) === true;
+    
+    // Set to the opposite state, or to forceState if provided
+    const newState = (forceState !== undefined) ? forceState : !currentState;
+    
+    console.log(`Toggling glamour for node ${nodeId}: ${currentState} -> ${newState}`);
+    
+    // Set new state
+    glamourStates.set(nodeId, newState);
+    
+    // Find node and force redraw its background
+    const node = app.graph._nodes.find(n => n.id == nodeId);
+    if (node) {
+        console.log(`Found node, forcing redraw: ${node.id}`);
+        // We can potentially force the node's onDrawBackground method directly if needed
+        if (node.onDrawBackground) {
+            app.graph.setDirtyCanvas(true, true);
+        }
+    } else {
+        console.error(`Cannot find node with id ${nodeId}`);
+    }
+    
+    // Update UI
+    updateBottomRightToggle();
+    updateGlamourStateWidget();
+}
+
+// Make available globally
+window.toggleNodeGlamour = toggleNodeGlamour;
 
 app.registerExtension({
     name: "Comfy.Glamour",
@@ -625,7 +696,7 @@ app.registerExtension({
 
         // Initial attempt to add the button
         addGlamourToggleButton();
-
+        
         app.graph._nodes.forEach(node => {
             const glamourWidget = createGlamourOverlay(node, node.name, {}, app);
             if (glamourWidget) {
@@ -725,6 +796,7 @@ app.registerExtension({
                     if (transparencyWidget) {
                         const originalTransparencyCallback = transparencyWidget.callback;
                         transparencyWidget.callback = (value) => {
+                            console.log(`[Glamour] Transparency widget callback received: value=${value}, type=${typeof value}`);
                             setTimeout(() => handleTransparencyChange(value), 0);
                             if (originalTransparencyCallback) {
                                 return originalTransparencyCallback.call(this, value);
