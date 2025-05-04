@@ -143,10 +143,10 @@ function createGlamourOverlay(node, inputName, inputData, app) {
 
     const isGlamourNode = node.type === GlamourUI.GLAMOUR_NODE_TYPE;
     // Set initial state, default to false unless explicitly set true
-    if (!glamourStates.has(node.id)) {
+    if (!glamourStates.has(String(node.id))) {
         const initialState = !isGlamourNode && isGlamourMasterEnabled;
         console.log(`Setting initial glamour state for node ${node.id} to: ${initialState}`);
-        glamourStates.set(node.id, initialState);
+        glamourStates.set(String(node.id), initialState);
     }
     
     const headerHeight = LiteGraph.NODE_TITLE_HEIGHT;
@@ -186,7 +186,7 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         name: `w${inputName}`,
         
         draw: function(ctx, node, widgetWidth, y, widgetHeight) {
-            const isActive = glamourStates.get(node.id) === true;
+            const isActive = glamourStates.get(String(node.id)) === true;
             
             // Only draw veil icon if master enabled and node is inactive
             if (isGlamourMasterEnabled && !isActive) {
@@ -265,7 +265,7 @@ function createGlamourOverlay(node, inputName, inputData, app) {
                 const [x, y, w, h] = this.veilRegion;
                 if (local_pos[0] > x && local_pos[0] < x + w &&
                     local_pos[1] > y && local_pos[1] < y + h) {
-                    glamourStates.set(this.parent.id, true);
+                    glamourStates.set(String(this.parent.id), true);
                     updateBottomRightToggle(); // Update the global toggle state representation
                     updateGlamourStateWidget(); // Update the combo box state
                     app.graph.setDirtyCanvas(true);
@@ -364,7 +364,7 @@ function createGlamourOverlay(node, inputName, inputData, app) {
         }
         
         // Only draw glamour if explicitly enabled
-        const isNodeGlamoured = glamourStates.get(this.id) === true;
+        const isNodeGlamoured = glamourStates.get(String(this.id)) === true;
         const shouldShowGlamour = isGlamourMasterEnabled && isNodeGlamoured;
         
         if (shouldShowGlamour) {
@@ -384,7 +384,7 @@ function loadGlamourImage(node, ctx) {
     if (!node) return;
     
     // Only proceed if glamour is actually enabled for this node
-    const isNodeGlamoured = glamourStates.get(node.id) === true;
+    const isNodeGlamoured = glamourStates.get(String(node.id)) === true;
     if (!isNodeGlamoured) return;
     
     const currentHash = generateNodeHash(node);
@@ -433,7 +433,7 @@ function addGlamourImageSupport(node) {
         }
         
         // Only draw glamour if this node has it enabled
-        const isGlamoured = glamourStates.get(this.id) === true;
+        const isGlamoured = glamourStates.get(String(this.id)) === true;
         if (isGlamourMasterEnabled && isGlamoured) {
             loadGlamourImage(this, ctx);
         }
@@ -450,7 +450,7 @@ function handleMasterGlamourToggle(enabled) {
         // Disable: Veil all nodes
         console.log("Disabling Glamour globally.");
         allGlamours.forEach(widget => {
-            glamourStates.set(widget.parent.id, false);
+            glamourStates.set(String(widget.parent.id), false);
         });
         if (bottomRightToggleButton) {
             bottomRightToggleButton.classList.add('glamour-hidden');
@@ -468,7 +468,7 @@ function handleMasterGlamourToggle(enabled) {
         allGlamours.forEach(widget => {
             // Set to false (veiled), except for the Glamour node itself if present
             const isGlamourNode = widget.parent.type === GlamourUI.GLAMOUR_NODE_TYPE;
-            glamourStates.set(widget.parent.id, false);
+            glamourStates.set(String(widget.parent.id), false);
         });
         if (bottomRightToggleButton) {
             // Set display before removing hidden class for animation
@@ -546,24 +546,26 @@ window.updateGlamourStateWidget = updateGlamourStateWidget;
 
 // Function to directly toggle a specific node's glamour state
 function toggleNodeGlamour(nodeId, forceState) {
-    if (!nodeId) {
+    if (nodeId === undefined || nodeId === null) {
         console.error("No nodeId provided to toggleNodeGlamour");
         return;
     }
     
+    const nodeIdStr = String(nodeId);
+
     // Get current state or default to false
-    const currentState = glamourStates.get(nodeId) === true;
+    const currentState = glamourStates.get(nodeIdStr) === true;
     
     // Set to the opposite state, or to forceState if provided
     const newState = (forceState !== undefined) ? forceState : !currentState;
     
-    console.log(`Toggling glamour for node ${nodeId}: ${currentState} -> ${newState}`);
+    console.log(`Toggling glamour for node ${nodeIdStr}: ${currentState} -> ${newState}`);
     
     // Set new state
-    glamourStates.set(nodeId, newState);
+    glamourStates.set(nodeIdStr, newState);
     
     // Find node and force redraw its background
-    const node = app.graph._nodes.find(n => n.id == nodeId);
+    const node = app.graph._nodes.find(n => String(n.id) === nodeIdStr);
     if (node) {
         console.log(`Found node, forcing redraw: ${node.id}`);
         // We can potentially force the node's onDrawBackground method directly if needed
@@ -629,10 +631,10 @@ app.registerExtension({
                         const newState = !currentStateIsGlamour;
                         // Toggle all nodes
                         allGlamours.forEach(widget => {
-                            glamourStates.set(widget.parent.id, newState);
+                            glamourStates.set(String(widget.parent.id), newState);
                         });
                         updateBottomRightToggle(); // Update the button state
-                        app.graph.setDirtyCanvas(true);
+                        app.graph.setDirtyCanvas(true, true);
 
                         // If tooltip is currently visible, update its text immediately
                         if (glamourTooltipElement && glamourTooltipElement.style.display === 'block') {
@@ -777,9 +779,9 @@ app.registerExtension({
 
                             console.log(`Glamour state widget changed to: ${value}`);
                             if (value === "All Glamoured") {
-                                allGlamours.forEach(widget => glamourStates.set(widget.parent.id, true));
+                                allGlamours.forEach(widget => glamourStates.set(String(widget.parent.id), true));
                             } else if (value === "All Veiled") {
-                                allGlamours.forEach(widget => glamourStates.set(widget.parent.id, false));
+                                allGlamours.forEach(widget => glamourStates.set(String(widget.parent.id), false));
                             } // "Mixed" does nothing when selected
 
                             updateBottomRightToggle(); // Update button appearance
