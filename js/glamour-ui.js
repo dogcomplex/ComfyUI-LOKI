@@ -20,7 +20,9 @@ export class GlamourUI {
         // Scale content relative to node size
         const innerContent = overlay.firstElementChild;
         if (innerContent) {
-            this.updateInnerContent(innerContent, isTransparencyEnabled);
+            // Pass the aurora element specifically, if found
+            const auroraElement = innerContent.querySelector('.glamour-aurora');
+            this.updateInnerContent(innerContent, auroraElement, isTransparencyEnabled);
 
             // Find the text element and apply scaling
             const canvasScale = app.canvas.ds.scale; // Get canvas zoom
@@ -112,8 +114,8 @@ export class GlamourUI {
         }
     }
 
-    static updateInnerContent(element, isTransparencyEnabled) {
-        Object.assign(element.style, {
+    static updateInnerContent(contentElement, auroraElement, isTransparencyEnabled) {
+        Object.assign(contentElement.style, {
             width: "100%",
             height: "100%",
             maxHeight: "100%",
@@ -128,16 +130,22 @@ export class GlamourUI {
             animation: 'northernLights 10s ease-in-out infinite'
         });
 
-        // Remove conditional transparency styling from here
-        Object.assign(element.style, {
-            maskImage: 'none',
-            WebkitMaskImage: 'none',
-            mixBlendMode: 'normal', // Keep it simple, blending is complex with DOM overlays
-            opacity: '1' // Keep it fully opaque unless image sets transparency
-        });
+        // Apply transparency styles to the main content element
+        if (isTransparencyEnabled) {
+            Object.assign(contentElement.style, {
+                // Using lighten blend mode for the whole container
+                mixBlendMode: 'lighten',
+                opacity: '0.85' // Slightly transparent container
+            });
+        } else {
+            Object.assign(contentElement.style, {
+                mixBlendMode: 'normal',
+                opacity: '1' // Fully opaque container
+            });
+        }
 
         // Add webkit scrollbar style directly to element
-        element.style.setProperty("-webkit-scrollbar", "none");
+        contentElement.style.setProperty("-webkit-scrollbar", "none");
     }
 
     static setBackgroundImage(element, imageSrc) {
@@ -156,7 +164,6 @@ export class GlamourUI {
         const auroraElement = element.parentElement.querySelector('.glamour-aurora');
         if (auroraElement) {
             // Keep aurora visible but behind the image
-            auroraElement.style.opacity = '0.9';
             auroraElement.style.zIndex = '1';
         }
         
