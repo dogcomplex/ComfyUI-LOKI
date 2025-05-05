@@ -1,9 +1,9 @@
-from .list_installed_nodes_node import ListInstalledNodesNode
+from .list_installed_nodes_node import ListInstalledNodes
 
 NODE_CLASS_MAPPINGS = {
-    "ListInstalledNodes": ListInstalledNodesNode
+    "LokiListInstalledNodes": ListInstalledNodes
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ListInstalledNodes": "List Installed Nodes"
+    "LokiListInstalledNodes": "📜🔍 List Installed Nodes (LOKI)"
 }
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS'] 

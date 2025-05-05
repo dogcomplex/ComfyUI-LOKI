@@ -2,7 +2,7 @@ import json
 from .twitter_user_scraper import scrape_user_profile_and_tweets # Import from the user scraper script
 from typing import Optional, Dict
 
-class LokiUserScraper:
+class TwitterUserScraper:
     """ 
     LOKI Node: Scrapes public profile data AND initial tweets for a specific X.com user.
     Input: profile_url (STRING)
@@ -23,7 +23,7 @@ class LokiUserScraper:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("user_data_json",)
     FUNCTION = "scrape_user_and_tweets"
-    CATEGORY = "LOKI/Web"
+    CATEGORY = "LOKI 🦊/Web"
     OUTPUT_NODE = True
 
     def scrape_user_and_tweets(self, profile_url: str, max_tweets: int, run_headless: bool = True):

@@ -1,0 +1,18 @@
+{
+  "node_name": "list_installed_nodes",
+  "version": "0.1.0",
+  "inputs": {
+    "trigger": {
+      "type": "*",
+      "description": "Optional trigger signal to re-run the node.",
+      "required": false
+    }
+  },
+  "outputs": {
+    "NODE_LIST": {
+      "type": "LIST",
+      "description": "A list of strings representing installed custom nodes."
+    }
+  },
+  "constants": {}
+} 

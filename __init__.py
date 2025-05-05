@@ -1,15 +1,25 @@
 from .nodes.glamour import GlamourNode
-from .nodes.twitter_scraper import LokiTweetScraper
+from .nodes.twitter_scraper import TwitterScraper
+from .nodes.twitter_thread_scraper import TwitterThreadScraper
+from .nodes.twitter_user_scraper import TwitterUserScraper
+from .nodes.list_installed_nodes import ListInstalledNodes
+
 
 # Register the custom node with ComfyUI
 NODE_CLASS_MAPPINGS = {
-    "Glamour 🦊": GlamourNode,
-    "TweetScraper": LokiTweetScraper
+    "LokiGlamour": GlamourNode,
+    "LokiTweetScraper": TwitterScraper,
+    "LokiTweetThreadScraper": TwitterThreadScraper,
+    "LokiTweetUserScraper": TwitterUserScraper,
+    "LokiListInstalledNodes": ListInstalledNodes
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Glamour 🦊": "Glamour 🦊",
-    "TweetScraper": "Scrape Tweet 🐦📜 (LOKI)"
+    "LokiGlamour": "🌘 Glamour",
+    "LokiTweetScraper": "🐦📜 Scrape Tweet (LOKI)",
+    "LokiTweetThreadScraper": "🐦📜 Scrape Tweet Thread (LOKI)",
+    "LokiTweetUserScraper": "🐦👤 Scrape Tweet User (LOKI)",
+    "LokiListInstalledNodes": "📜🔍 List Installed Nodes (LOKI)"
 }
 
 WEB_DIRECTORY = "./js"
@@ -72,6 +82,7 @@ NODE_CLASS_MAPPINGS = {
     **twitter_scraper_mappings,
     **twitter_thread_scraper_mappings,
     **twitter_user_scraper_mappings,
+    **list_installed_mappings,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -87,6 +98,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **twitter_scraper_display_mappings,
     **twitter_thread_scraper_display_mappings,
     **twitter_user_scraper_display_mappings,
+    **list_installed_display_mappings,
 }
 
 # WEB_DIRECTORY remains relative to the root package directory

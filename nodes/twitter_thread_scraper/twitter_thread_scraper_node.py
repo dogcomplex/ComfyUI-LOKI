@@ -2,7 +2,7 @@ import json
 from .twitter_thread_scraper import scrape_thread_data # Import from the thread scraper script
 from typing import List, Dict
 
-class LokiTweetThreadScraper:
+class TwitterThreadScraper:
     """ 
     LOKI Node: Scrapes tweet data from an entire X.com (Twitter) thread using Playwright.
     Input: thread_start_url (STRING), max_tweets (INT)
@@ -23,7 +23,7 @@ class LokiTweetThreadScraper:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("thread_data_json",)
     FUNCTION = "scrape_thread"
-    CATEGORY = "LOKI/Web"
+    CATEGORY = "LOKI 🦊/Web"
     OUTPUT_NODE = True
 
     def scrape_thread(self, thread_start_url: str, max_tweets: int, run_headless: bool = True):

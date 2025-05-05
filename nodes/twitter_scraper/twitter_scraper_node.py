@@ -1,7 +1,7 @@
 import json
 from .twitter_scraper import scrape_tweet_data # Import from the same directory
 
-class LokiTweetScraper:
+class TwitterScraper:
     """ 
     LOKI Node: Scrapes data from a specific X.com (Twitter) tweet URL using Playwright.
     Input: tweet_url (STRING)
@@ -21,7 +21,7 @@ class LokiTweetScraper:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("tweet_data_json",)
     FUNCTION = "scrape_tweet"
-    CATEGORY = "LOKI/Web"
+    CATEGORY = "LOKI 🦊/Web"
     OUTPUT_NODE = True # Useful for nodes that primarily produce final output data
 
     def scrape_tweet(self, tweet_url: str, run_headless: bool = True):

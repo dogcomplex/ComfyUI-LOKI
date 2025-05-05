@@ -63,6 +63,8 @@ Layers must match each other in functionality as closely as possible in *intent*
 #### FUNCTIONALITY LAYER (COMFY-NODE): `<node_name>_node.py`
 - AKA "LOKI NODE"
 - A python file that contains the ComfyUI-specific implementation details for the node. This should be a thin wrapper around the core implementation logic, and should not include any additional functionality or behavior.
+- Category should be `LOKI 🦊/<subcategory>`
+- Class name should be <node_name> in PascalCase
 
 ---
 

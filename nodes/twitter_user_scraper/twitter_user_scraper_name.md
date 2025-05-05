@@ -1,7 +1,43 @@
-TOKEN="🐦👤ScrapeUser"
-EMOJI_ICON="👤"
-RECIPE="URL => USER_PROFILE_DATA"
-X2Y_FORMAT="D2D_twitter_user_url_to_profile_json"
-ALIASES=["scrape_twitter_user", "get_user_profile", "get_twitter_profile"]
-TAGS=["twitter", "x.com", "scrape", "web", "social media", "user", "profile"]
-METAPHORS=["A digital detective pulling a user's public dossier", "A census taker recording public profile details"] 
+# Scrape Twitter User Profile & Tweets
+
+## TOKEN
+
+`👤🐦📜UserProfile`
+
+## EMOJI_ICON
+
+`👤`
+
+## RECIPE
+
+`URL(STRING) => UserData(DICT)`
+
+## X2Y_FORMAT
+
+`URL2UserData`
+
+## ALIASES
+
+- Twitter Profile Scraper
+- X User Scraper
+- Twitter User Info
+- Get User Tweets
+
+## TAGS
+
+- twitter
+- x.com
+- scrape
+- user
+- profile
+- tweets
+- social media
+- playwright
+- web scraping
+- public data
+
+## METAPHORS
+
+- **Digital Detective's Dossier:** Gathers public information and recent activity for a specific online persona.
+- **Social Media Snapshot:** Captures a user's profile details and their latest posts like a quick snapshot.
+- **Online Persona Card:** Presents a user's key info and recent updates, similar to a digital business card. 

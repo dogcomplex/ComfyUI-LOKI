@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import os
-from .twitter_scraper_node import LokiTweetScraper
+from .twitter_scraper_node import TwitterScraper
 
 did_playwright_install_check = False
 
@@ -36,10 +36,10 @@ ensure_playwright_chromium()
 
 # Placeholder for ComfyUI node registration
 NODE_CLASS_MAPPINGS = {
-    "LokiTweetScraper": LokiTweetScraper
+    "TwitterScraper": TwitterScraper
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "LokiTweetScraper": "🐦📜 Scrape Tweet (LOKI)"
+    "TwitterScraper": "🐦📜 Scrape Tweet (LOKI)"
 }
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']

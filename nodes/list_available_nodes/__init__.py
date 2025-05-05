@@ -4,6 +4,6 @@ NODE_CLASS_MAPPINGS = {
     "ListAvailableNodes": ListAvailableNodesNode
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ListAvailableNodes": "List Available Nodes (Manager)"
+    "ListAvailableNodes": "📜🔍 List Available Nodes (Manager)"
 }
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS'] 

@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import os
-from .twitter_user_scraper_node import LokiUserScraper # Import the new node class
+from .twitter_user_scraper_node import TwitterUserScraper # Import the new node class
 
 # --- Playwright check (Keep as is, maybe make shared later) --- 
 # We might not strictly need this for the user scraper if it doesn't use playwright yet,
@@ -16,10 +16,10 @@ def ensure_playwright_chromium():
 
 # --- Node Registration --- 
 NODE_CLASS_MAPPINGS = {
-    "LokiUserScraper": LokiUserScraper
+    "TwitterUserScraper": TwitterUserScraper
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "LokiUserScraper": "🐦👤 Scrape User Profile (LOKI)"
+    "TwitterUserScraper": "🐦👤 Scrape User Profile (LOKI)"
 }
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']

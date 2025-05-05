@@ -17,9 +17,9 @@ class GlamourNode:
 
     RETURN_TYPES = () # This node primarily affects the UI, doesn't return workflow data
     FUNCTION = "do_nothing" # Needs a function, even if it does nothing in the backend flow
-    CATEGORY = "UI"
+    CATEGORY = "LOKI 🦊/UI"
     OUTPUT_NODE = True # Crucial: Allows it to interact with the UI framework
-    NODE_NAME = "Glamour 🦊" # Keep the original internal name for JS matching if needed
+    NODE_NAME = "Glamour 🌘" # Keep the original internal name for JS matching if needed
 
     def __init__(self):
         # Utils might handle path creation now, but keep reference if needed
