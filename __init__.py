@@ -9,7 +9,6 @@ from .nodes.scribe import NODE_CLASS_MAPPINGS as scribe_mappings, NODE_DISPLAY_N
 from .nodes.list_installed_nodes import ListInstalledNodes, NODE_CLASS_MAPPINGS as list_installed_mappings, NODE_DISPLAY_NAME_MAPPINGS as list_installed_display_mappings
 from .nodes.list_available_nodes import ListAvailableNodes, NODE_CLASS_MAPPINGS as list_available_mappings, NODE_DISPLAY_NAME_MAPPINGS as list_available_display_mappings
 from .nodes.filter_nodes import NODE_CLASS_MAPPINGS as filter_nodes_mappings, NODE_DISPLAY_NAME_MAPPINGS as filter_nodes_display_mappings
-from .nodes.generate_filter_prompt import NODE_CLASS_MAPPINGS as generate_prompt_mappings, NODE_DISPLAY_NAME_MAPPINGS as generate_prompt_display_mappings
 from .nodes.evaluate_relevance_llm import NODE_CLASS_MAPPINGS as evaluate_llm_mappings, NODE_DISPLAY_NAME_MAPPINGS as evaluate_llm_display_mappings
 from .nodes.llm_query_api import NODE_CLASS_MAPPINGS as llm_query_api_mappings, NODE_DISPLAY_NAME_MAPPINGS as llm_query_api_display_mappings
 from .nodes.llm_query_api_batch import NODE_CLASS_MAPPINGS as llm_query_api_batch_mappings, NODE_DISPLAY_NAME_MAPPINGS as llm_query_api_batch_display_mappings
@@ -72,7 +71,6 @@ NODE_CLASS_MAPPINGS = {
     **list_installed_mappings,
     **list_available_mappings,
     **filter_nodes_mappings,
-    **generate_prompt_mappings,
     **evaluate_llm_mappings,
     **llm_query_api_mappings,
     **llm_query_api_batch_mappings,
@@ -89,7 +87,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **list_installed_display_mappings,
     **list_available_display_mappings,
     **filter_nodes_display_mappings,
-    **generate_prompt_display_mappings,
     **evaluate_llm_display_mappings,
     **llm_query_api_display_mappings,
     **llm_query_api_batch_display_mappings,

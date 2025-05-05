@@ -6,8 +6,6 @@ from typing import List, Dict, Tuple, Optional
 import os
 # No requests import needed here directly
 
-# Import the prompt generation node helper
-from ..generate_filter_prompt.generate_filter_prompt_node import GenerateFilterPromptNode
 # Import the batch query node for its static method
 from ..llm_query_api_batch.llm_query_api_batch_node import LLMQueryAPIBatchNode, DEFAULT_LLM_API_URL, DEFAULT_LLM_MODEL, DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT, DEFAULT_BATCH_SIZE, DEFAULT_TEMPERATURE
 
@@ -55,7 +53,6 @@ class FilterNodesNode:
     def __init__(self):
         self.output_dir = FilterNodesNode.NODE_OUTPUT_DIR
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.prompt_generator = GenerateFilterPromptNode()
 
     # --- Helper Functions (Adapted from original script) ---
 
@@ -128,21 +125,6 @@ class FilterNodesNode:
 
         return nodes
 
-    def create_llm_prompt(self, node_name: str, node_block_text: str, user_prompt: str) -> str:
-        """Create the specific prompt for the LLM to evaluate a node block."""
-        # Include node name and the full block for context
-        return f"""Workflow Goal: {user_prompt}
-
-Node Name: {node_name}
-
-Node Information Block:
---- START BLOCK ---
-{node_block_text}
---- END BLOCK ---
-
-Evaluate this node's relevance and utility for the specified workflow goal based *only* on the information provided in the block."""
-
-
     def format_filtered_markdown(self, scored_nodes: List[Dict], original_prompt: str, threshold: int) -> str:
         """Formats the filtered nodes into a markdown string."""
         output_lines = [
@@ -186,7 +168,20 @@ Evaluate this node's relevance and utility for the specified workflow goal based
             return ("*No node blocks found in the input markdown.*", "Error: No nodes parsed")
 
         # Generate Prompts
-        llm_prompts = [self.prompt_generator.generate_prompt(wp, name, block)[0] for name, block, wp in ((n, b, workflow_prompt) for n, b, _ in nodes_to_evaluate)]
+        llm_prompts = []
+        for node_name, node_block_text, _ in nodes_to_evaluate:
+            # Inline the prompt generation logic here
+            llm_prompt = f"""Workflow Goal: {workflow_prompt}
+
+Node Name: {node_name}
+
+Node Information Block:
+--- START BLOCK ---
+{node_block_text}
+--- END BLOCK ---
+
+Evaluate this node's relevance and utility for the specified workflow goal based *only* on the information provided in the block."""
+            llm_prompts.append(llm_prompt)
 
         # Query LLM using imported static batch logic
         print(f"Querying LLM via LLMQueryAPIBatchNode static method...")
@@ -258,37 +253,108 @@ Evaluate this node's relevance and utility for the specified workflow goal based
 
     @classmethod
     def execute_standalone(cls, input_file: Path, output_file: Path, prompt: str, threshold: int = 40, batch_size: int = 4):
-        """Standalone execution (mimics batch node behavior)."""
-        instance = cls() # Create an instance to use helper methods
+        """Run the filtering process from the command line."""
         print(f"\n--- Standalone Execution ---")
-        print(f"Input: {input_file}, Output: {output_file}, Prompt: '{prompt[:50]}...', Threshold: {threshold}, Batch: {batch_size}")
+        print(f"Input: {input_file}, Output: {output_file}, Prompt: '{prompt[:60]}...', Threshold: {threshold}, Batch: {batch_size}")
 
         if not input_file.exists():
             print(f"Error: Input file not found: {input_file}")
             return
 
-        markdown_content = input_file.read_text(encoding='utf-8')
+        try:
+            markdown_content = input_file.read_text(encoding='utf-8')
+        except Exception as e:
+            print(f"Error reading input file: {e}")
+            return
 
-        # Call the batch function directly
-        filtered_content, saved_path = instance.filter_nodes_batch(
-            node_markdown_content=markdown_content,
-            workflow_prompt=prompt,
-            relevance_threshold=threshold,
-            output_filename_prefix=output_file.stem,
-            llm_batch_size=batch_size
-            # Uses default batch system prompt
+        # Parse nodes directly using instance method (needs instantiation now)
+        instance = cls() # Instantiate to use parse_node_blocks
+        nodes_to_evaluate = instance.parse_node_blocks(markdown_content)
+        total_nodes = len(nodes_to_evaluate)
+        print(f"Parsed {total_nodes} node blocks.")
+        if total_nodes == 0:
+            print("No nodes found in input.")
+            return
+
+        # Generate Prompts (Inlined)
+        llm_prompts = []
+        for node_name, node_block_text, _ in nodes_to_evaluate:
+            llm_prompt = f"""Workflow Goal: {prompt}
+
+Node Name: {node_name}
+
+Node Information Block:
+--- START BLOCK ---
+{node_block_text}
+--- END BLOCK ---
+
+Evaluate this node's relevance and utility for the specified workflow goal based *only* on the information provided in the block."""
+            llm_prompts.append(llm_prompt)
+
+        # Query LLM (using default params for simplicity in standalone)
+        print(f"Querying LLM with batch size {batch_size}...")
+        llm_results = LLMQueryAPIBatchNode._static_query_llm_batch(
+            prompts_list=llm_prompts,
+            system_prompt=SYSTEM_PROMPT_FILTER_BATCH,
+            api_url=DEFAULT_LLM_API_URL,
+            model=DEFAULT_LLM_MODEL,
+            temperature=DEFAULT_TEMPERATURE,
+            batch_size=batch_size,
+            max_retries=DEFAULT_MAX_RETRIES,
+            timeout=DEFAULT_TIMEOUT
         )
 
-        # Standalone might want to write to the specified output_file directly
-        if "Error:" not in saved_path and output_file:
-             try:
-                  output_file.parent.mkdir(parents=True, exist_ok=True)
-                  output_file.write_text(filtered_content, encoding='utf-8')
-                  print(f"Standalone output written to: {output_file}")
-             except Exception as e:
-                  print(f"Error writing standalone output file: {e}")
-        elif "Error:" in saved_path:
-             print(f"Node execution reported an error: {saved_path}")
+        # Process results
+        filtered_nodes_info = []
+        if len(llm_results) != total_nodes:
+             print(f"Warning: Mismatch between prompts ({total_nodes}) and results ({len(llm_results)}). Padding.")
+             while len(llm_results) < total_nodes: llm_results.append({"score": 0, "reason": "Missing LLM response"})
+
+        for i, (node_name, block, metadata) in enumerate(nodes_to_evaluate):
+            result = llm_results[i]
+            # Check for error key from internal batch logic first
+            if result.get("error"):
+                 print(f"Skipping node '{node_name}' due to processing error: {result['error']}")
+                 continue
+            score = result.get("score", 0)
+            reason = result.get("reason", "No reason provided.")
+
+            # Ensure score is an integer
+            try:
+                 score = int(score)
+            except (ValueError, TypeError):
+                 print(f"Warning: Invalid score '{score}' for node '{node_name}'. Setting to 0.")
+                 score = 0
+
+
+            if score >= threshold:
+                filtered_nodes_info.append({
+                    "name": node_name,
+                    "original_block": block, # Store original block text
+                    "score": score,
+                    "reason": reason,
+                    **metadata # Include parsed metadata
+                })
+
+        print(f"Found {len(filtered_nodes_info)} nodes meeting threshold {threshold}.")
+
+        # Format output markdown
+        filtered_markdown_output = self.format_filtered_markdown(
+             filtered_nodes_info, prompt, threshold
+        )
+
+        # Save to file
+        safe_prefix = re.sub(r'[^\w\-_\. ]', '_', output_file.stem)
+        # Create a more descriptive filename if possible
+        prompt_slug = re.sub(r'[^\w\-]+', '_', prompt[:25]).strip('_')
+        output_filename = f"{safe_prefix}_filtered_{prompt_slug}.md"
+        output_filepath = output_file
+
+        try:
+            output_filepath.write_text(filtered_markdown_output, encoding="utf-8")
+            print(f"Standalone output written to: {output_filepath}")
+        except Exception as e:
+            print(f"Error writing standalone output file: {e}")
 
 
 # --- Main block for standalone execution ---
