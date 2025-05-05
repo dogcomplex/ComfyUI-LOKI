@@ -31,6 +31,11 @@ Layers must match each other in functionality as closely as possible in *intent*
 - A node *may* temporarily be a complex standalone node without sub-nodes, but this should be considered as a likely temporary state barring particular circumstances under `NODE_STRATEGY`.
 - A node *may* be just a wrapper of 3rd party nodes or functions from other libraries or ComfyUI beyond LOKI. If so, this should be described under `NODE_STRATEGY`.
 
+#### STATUS LAYER: `STATUS.md`
+- A description of the current status of the node, including any known limitations or issues.
+- This should be updated as the node is developed to reflect the current state of the node
+- This is where we include lists of TODOs, tasks, planning, future work speculation, etc.
+
 #### NAME LAYER: `<node_name>_name.md`
 - A markdown file that contains the official full name of the node (English string with spaces), as well as any other naming information.
 - Additional naming, e.g. using other cases and formats, if any, should be described in this document as well.
