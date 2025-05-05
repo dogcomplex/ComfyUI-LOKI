@@ -1,0 +1,7 @@
+# LOKI Core Dependencies
+# (Add any core dependencies here if needed)
+
+# Node Dependencies:
+playwright>=1.30.0 # For twitter_scraper, twitter_thread_scraper nodes
+jmespath>=1.0.0    # For twitter_scraper, twitter_thread_scraper nodes
+# Add other node dependencies below

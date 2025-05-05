@@ -1,0 +1,2 @@
+playwright>=1.30.0 # Or a recent version
+jmespath>=1.0.0 

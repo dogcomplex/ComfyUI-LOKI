@@ -1,0 +1,403 @@
+https://scrapfly.io/blog/how-to-scrape-twitter/
+
+The Best Web Scraping API
+Products 
+Pricing
+Why Us?
+Docs
+Blog
+Knowledgebase
+Login
+How to Scrape X.com (Twitter) using Python (2025 Update)
+by Bernardas Ališauskas
+Jan 21, 2025
+scrapeguide
+Python
+How to Scrape X.com (Twitter) using Python (2024 Update)
+As Twitter.com became X.com it closed its public API though web scraping is here to the rescue!
+
+In this X.com web scraping tutorial, we'll take a look at scraping X.com posts and profiles using Python and Playwright.
+
+We'll be using Python to retrieve X.com data such as:
+
+X.com post (tweet) information.
+X.com user profile information.
+Unfortunately, the rest of the data points are not possible to scrape without login however we'll mention some potential workarounds and suggestions.
+
+So, we'll be scraping X.com without login or any complex tricks using headless browsers and capturing background requests making this a very simple and powerful scraper.
+
+For our headless browser environment, we'll be using Scrapfly SDK with Javascript Rendering feature. Alternatively, for non-scrapfly users, we'll also show how to achieve similar results using Playwright.
+
+Latest X.com Scraper Code
+Why Scrape X.com?
+Project Setup
+How Do X.com Pages Work?
+Scraping Tweets (Posts)
+Parsing Tweet Dataset
+Scraping X.com User Profiles
+Bypass X.com Blocking with ScrapFly
+Scraping X.com Search, Replies and Timelines
+FAQ
+X.com Scraping Summary
+Get monthly web scraping insights 👆
+
+Learn at ScrapFly Academy
+Latest X.com Scraper Code
+https://github.com/scrapfly/scrapfly-scrapers/
+Legal Disclaimer and Precautions
+This tutorial covers popular web scraping techniques for education. Interacting with public servers requires diligence and respect and here's a good summary of what not to do:
+
+Do not scrape at rates that could damage the website.
+Do not scrape data that's not available publicly.
+Do not store PII of EU citizens who are protected by GDPR.
+Do not repurpose the entire public datasets which can be illegal in some countries.
+Scrapfly does not offer legal advice but these are good general rules to follow in web scraping
+and for more you should consult a lawyer.
+
+Why Scrape X.com?
+X.com (formerly Twitter.com) is a major announcement hub where people and companies publish their news. This is a great opportunity to use X.com to follow and understand industry trends. For example, stock market or crypto market targets could be scraped to predict the future price of a stock or crypto.
+
+X is also a great source of data for sentiment analysis. You can use X.com to find out what people think about a certain topic or brand. This is useful for market research, product development, and brand awareness.
+
+So, if we can scrape X.com data with Python we can have access to this valuable public information for free!
+
+Project Setup
+In this tutorial, we'll cover X/Twitter scraping using Python and scrapfly-sdk or Playwright.
+
+To parse the scraped X.com datasets we'll be using Jmespath JSON parsing library which allows to parse and reshape JSON data.
+
+All of these libraries are available for free and can be installed via pip install terminal command:
+
+$ pip install playwright jmespath scrapfly-sdk
+Web Scraping with Playwright and Python
+For an introduction to web scraping with Playwright see this beginner's guide which covers common functionality and an example project.
+
+Web Scraping with Playwright and Python
+How Do X.com Pages Work?
+Before we start scraping, let's take a quick look at how X.com website works through a bit of basic reverse engineering. This will help us to develop our Twitter scraper.
+
+To start, X.com is a javascript web application that uses a lot of background requests (XHR) to display the page data. In short, it works by loading the initial HTML, then starting a JS app and then using XHR requests loads the tweet data:
+
+Twitter page load process
+Twitter page load process
+So, scraping it without a headless browser such as Playwright or Scrapfly SDK would be very difficult as we'd have to reverse engineer the entire X.com API and application process.
+
+To add, X.com page HTML is dynamic and complex making parsing scraped content very difficult. So, the best approach to scrape Twitter is to use a headless browser and capture background requests that download the Tweet and user data.
+
+To summarize, our best bet is to:
+
+Start a headless web browser.
+Enable background request capture.
+Load X.com page.
+Select captured background requests that contain post or profile data.
+For example, if we take a look at a Twitter profile page in Browser Developer Tools we can see the requests Twitter performs in the background to load the page data:
+
+
+
+0:00
+/0:18
+
+1×
+
+
+X.com (Twitter) backend making a background request to retrieve data
+Next, let's start by scraping X.com posts (tweets).
+
+Scraping Tweets (Posts)
+To scrape individual X.com post pages we'll be loading the page using a headless browser and capturing the background requests that retrieve tweet details. This request can be identified by TweetResultByRestId in the URL.
+
+This background request returns a JSON response that contains post and author information.
+
+So, to scrape this using Python we can either use Playwright or Scrapfly SDK:
+
+Python ScrapFly
+from playwright.sync_api import sync_playwright
+
+
+def scrape_tweet(url: str) -> dict:
+    """
+    Scrape a single tweet page for Tweet thread e.g.:
+    https://twitter.com/Scrapfly_dev/status/1667013143904567296
+    Return parent tweet, reply tweets and recommended tweets
+    """
+    _xhr_calls = []
+
+    def intercept_response(response):
+        """capture all background requests and save them"""
+        # we can extract details from background requests
+        if response.request.resource_type == "xhr":
+            _xhr_calls.append(response)
+        return response
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=False)
+        context = browser.new_context(viewport={"width": 1920, "height": 1080})
+        page = context.new_page()
+
+        # enable background request intercepting:
+        page.on("response", intercept_response)
+        # go to url and wait for the page to load
+        page.goto(url)
+        page.wait_for_selector("[data-testid='tweet']")
+
+        # find all tweet background requests:
+        tweet_calls = [f for f in _xhr_calls if "TweetResultByRestId" in f.url]
+        for xhr in tweet_calls:
+            data = xhr.json()
+            return data['data']['tweetResult']['result']
+
+
+
+if __name__ == "__main__":
+    print(scrape_tweet("https://twitter.com/Scrapfly_dev/status/1664267318053179398"))
+Example Output
+Here, we loaded the Tweet page using a headless browser and captured all of the background requests. Then, we filtered out the ones that contained the Tweet data.
+
+One important note here is that we need to wait for the page to load which is indicated by tweets appearing on the page HTML otherwise we'll return our scrape before the background requests have finished.
+
+This resulted in a massive JSON dataset that can be difficult to work with. So, let's take a look at how to reduce it with a bit of JSON parsing next.
+
+Parsing Tweet Dataset
+The Tweet dataset we scraped contains a lot of complex data so let's reduce it to something more clean and simple using Jmespath JSON parsing library.
+
+For this, we'll be using jmespath's JSON reshaping feature which allows us to rename keys and flatten nested objects:
+
+from typing import Dict
+
+def parse_tweet(data: Dict) -> Dict:
+    """Parse Twitter tweet JSON dataset for the most important fields"""
+    result = jmespath.search(
+        """{
+        created_at: legacy.created_at,
+        attached_urls: legacy.entities.urls[].expanded_url,
+        attached_urls2: legacy.entities.url.urls[].expanded_url,
+        attached_media: legacy.entities.media[].media_url_https,
+        tagged_users: legacy.entities.user_mentions[].screen_name,
+        tagged_hashtags: legacy.entities.hashtags[].text,
+        favorite_count: legacy.favorite_count,
+        bookmark_count: legacy.bookmark_count,
+        quote_count: legacy.quote_count,
+        reply_count: legacy.reply_count,
+        retweet_count: legacy.retweet_count,
+        quote_count: legacy.quote_count,
+        text: legacy.full_text,
+        is_quote: legacy.is_quote_status,
+        is_retweet: legacy.retweeted,
+        language: legacy.lang,
+        user_id: legacy.user_id_str,
+        id: legacy.id_str,
+        conversation_id: legacy.conversation_id_str,
+        source: source,
+        views: views.count
+    }""",
+        data,
+    )
+    result["poll"] = {}
+    poll_data = jmespath.search("card.legacy.binding_values", data) or []
+    for poll_entry in poll_data:
+        key, value = poll_entry["key"], poll_entry["value"]
+        if "choice" in key:
+            result["poll"][key] = value["string_value"]
+        elif "end_datetime" in key:
+            result["poll"]["end"] = value["string_value"]
+        elif "last_updated_datetime" in key:
+            result["poll"]["updated"] = value["string_value"]
+        elif "counts_are_final" in key:
+            result["poll"]["ended"] = value["boolean_value"]
+        elif "duration_minutes" in key:
+            result["poll"]["duration"] = value["string_value"]
+    user_data = jmespath.search("core.user_results.result", data)
+    if user_data:
+        result["user"] = parse_user(user_data)
+    return result
+Above we're using jmespath to reshape the giant, nested dataset we scraped from Twitter's graphql backend into a flat dictionary containing only the most important fields.
+
+Scraping X.com User Profiles
+To scrape X.com profile pages we'll be using the same background request capturing approach though this time we'll be capturing UserBy endpoints.
+
+We'll be using the same technique we used to scrape X posts - launch a headless browser, enable background request capture, load the page and get the data requests:
+
+Python ScrapFly
+import asyncio
+from playwright.sync_api import sync_playwright
+
+
+def scrape_profile(url: str) -> dict:
+    """
+    Scrape a X.com profile details e.g.: https://x.com/Scrapfly_dev
+    """
+    _xhr_calls = []
+
+    def intercept_response(response):
+        """capture all background requests and save them"""
+        # we can extract details from background requests
+        if response.request.resource_type == "xhr":
+            _xhr_calls.append(response)
+        return response
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=False)
+        context = browser.new_context(viewport={"width": 1920, "height": 1080})
+        page = context.new_page()
+
+        # enable background request intercepting:
+        page.on("response", intercept_response)
+        # go to url and wait for the page to load
+        page.goto(url)
+        page.wait_for_selector("[data-testid='primaryColumn']")
+
+        # find all tweet background requests:
+        tweet_calls = [f for f in _xhr_calls if "UserBy" in f.url]
+        for xhr in tweet_calls:
+            data = xhr.json()
+            return data['data']['user']['result']
+
+
+
+if __name__ == "__main__":
+    print(asyncio.run(scrape_profile("https://x.com/Scrapfly_dev")))
+Example Output
+Bypass X.com Blocking with ScrapFly
+If we start scraping X.com at scale we start to quickly run into blocking as X.com doesn't allow automated requests and will block scraper IP addresses after a few scraping requests.
+
+To get around this Scrapfly can lend a hand!
+
+scrapfly middleware
+ScrapFly provides web scraping, screenshot, and extraction APIs for data collection at scale.
+
+Anti-bot protection bypass - scrape web pages without blocking!
+Rotating residential proxies - prevent IP address and geographic blocks.
+JavaScript rendering - scrape dynamic web pages through cloud browsers.
+Full browser automation - control browsers to scroll, input and click on objects.
+Format conversion - scrape as HTML, JSON, Text, or Markdown.
+Python and Typescript SDKs, as well as Scrapy and no-code tool integrations.
+For example, to use ScrapFly with Python we can take advantage of Python SDK:
+
+from scrapfly import ScrapflyClient, ScrapeConfig
+scrapfly = ScrapflyClient(key="YOUR SCRAPFLY KEY")
+
+result = scrapfly.scrape(ScrapeConfig(
+    "https://twitter.com/Scrapfly_dev",
+    # we can enable features like:
+    # cloud headless browser use
+    render_js=True,  
+    # anti scraping protection bypass
+    asp=True, 
+    # screenshot taking
+    screenshots={"all": "fullpage"},
+    # proxy country selection
+    country="US",
+))
+For more on using ScrapFly to scrape Twitter see the Full Scraper Code section.
+
+Scraping X.com Search, Replies and Timelines
+In this tutorial, we've covered how to scrape X.com posts and profiles that are publicly available for everyone.
+
+The other areas like search and timelines pages are not publicly available and require a login to access which can lead to account suspension.
+
+X.com does offer a public guest preview access for timelines and tweet search but only for Android devices. This is the only way to scrape X.com timelines, tweet replies and search without login.
+
+The most reliable up-to-date source for this is Nitter.net which is an alternative, open source Twitter front-end.
+For more on that, we recommend following Nitter Guest Account Branch on Github.
+
+FAQ
+To wrap up this Python Twitter scraper let's take a look at some frequently asked questions regarding web scraping Twitter:
+
+Is it legal to scrape X.com?
+Yes, all of the data on X.com is available publically so it's perfectly legal to scrape. However, note that some tweets can contain copyrighted material like images or videos and using this data commercially can be illegal.
+
+How to scrape X.com without getting blocked?
+X.com is a complex javascript-heavy website and is hostile to web scraping so it's easy to get blocked. To avoid this you can use ScrapFly which provides anti-scraping technology bypass and proxy rotation. Alternatively, see our article on how to avoid web scraper blocking.
+
+Is it legal to scrape X.com while logged in?
+The legality of scraping X.com while logged in is a bit of a grey area. Generally, logging in legally binds the user to the website's terms of service which in Twitter's case forbids automated scraping. This allows X to suspend your account or even take legal action. It's best to avoid web scraping X.com while logged in if possible.
+
+How to reduce bandwidth use and speed up X scraping?
+If you're using browser automation tools like Playwright (used in this article) then you can block images and unnecessary resources to save bandwidth and speed up scraping.
+
+Latest X.com Scraper Code
+https://github.com/scrapfly/scrapfly-scrapers/
+X.com Scraping Summary
+In this tutorial, we made a short Twitter scraper (now known as X.com) using Python headless browsers through Playwright or Scrapfly SDK.
+
+To start, we've taken a look at how X.com works and identified where the data is located. We found that X is using background requests to populate post and profile data.
+
+To capture and scrape these background requests we used the intercept function of Playwright or Scrapfly-SDK and parsed the raw datasets to nice clean data JSONs using jmespath.
+
+Finally, to avoid blocking we've taken a look at ScrapFly web scraping API which provides a simple way to scrape Twitter at scale using proxies and anti scraping technology bypassing. Try out ScrapFly for free!
+
+Check out ScrapFly Python SDK
+Try ScrapFly for FREE!
+scrapeguide Python
+Related Posts
+How to Scrape Reddit Posts, Subreddits and Profiles
+Apr 22, 2024
+How to Scrape Reddit Posts, Subreddits and Profiles
+In this article, we'll explore how to scrape Reddit. We'll extract various social data types from subreddits, posts, and user pages. All of which through plain HTTP requests without headless browser usage.
+
+Python scrapeguide
+How to Scrape LinkedIn in 2025
+Apr 05, 2024
+How to Scrape LinkedIn in 2025
+In this scrape guide we'll be taking a look at one of the most popular web scraping targets - LinkedIn.com. We'll be scraping people profiles, company profiles as well as job listings and search.
+
+Python scrapeguide
+How to Scrape SimilarWeb Website Traffic Analytics
+Mar 25, 2024
+How to Scrape SimilarWeb Website Traffic Analytics
+In this guide, we'll explain how to scrape SimilarWeb through a step-by-step guide. We'll scrape comprehensive website traffic insights, websites comparing data, sitemaps, and trending industry domains.
+
+scrapeguide SEO search-engine Python
+Company
+Careers
+Terms of service
+Privacy Policy
+Data Processing Agreement
+KYC Compliance
+Status
+Integrations
+Zapier
+Make
+N8n
+LlamaIndex
+LangChain
+Social
+Tools
+Convert cURL commands to Python code
+JA3/TLS Fingerprint
+HTTP2 Fingerprint
+Xpath/CSS Selector Tester
+Resources
+API Documentation
+Web Scraping Academy
+Is Web Scraping Legal?
+Web Scraping Tools
+FAQ
+Learn Web Scraping
+Web Scraping with Python
+Web Scraping with PHP
+Web Scraping with Ruby
+Web Scraping with R
+Web Scraping with NodeJS
+Web Scraping with Python Scrapy
+How to Scrape without getting blocked tutorial
+Web Scraping with Python and BeautifulSoup
+Web Scraping with Nodejs and Puppeteer
+How To Scrape Graphql
+Best Proxies for Web Scraping
+Top 5 Best Residential Proxies
+Usage
+What is Web Scraping used for?
+Web Scraping for AI Training
+Web Scraping for Compliance
+Web Scraping for eCommerce
+Web Scraping for Finance
+Web Scraping for Fraud Detection
+Web Scraping for Jobs
+Web Scraping for Lead Generation
+Web Scraping for News & Media
+Web Scraping for Real Estate
+Web Scraping for SERP & SEO
+Web Scraping for Social Media
+Web Scraping for Travel
+© 2025 Scrapfly - The Best Web Scraping API For Developers

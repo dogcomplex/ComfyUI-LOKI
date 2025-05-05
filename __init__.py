@@ -1,12 +1,15 @@
 from .nodes.glamour import GlamourNode
+from .nodes.twitter_scraper import LokiTweetScraper
 
 # Register the custom node with ComfyUI
 NODE_CLASS_MAPPINGS = {
-    "Glamour 🦊": GlamourNode
+    "Glamour 🦊": GlamourNode,
+    "TweetScraper": LokiTweetScraper
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Glamour 🦊": "Glamour 🦊"
+    "Glamour 🦊": "Glamour 🦊",
+    "TweetScraper": "Scrape Tweet 🐦📜 (LOKI)"
 }
 
 WEB_DIRECTORY = "./js"
@@ -50,6 +53,9 @@ from .nodes.generate_filter_prompt import NODE_CLASS_MAPPINGS as generate_prompt
 from .nodes.evaluate_relevance_llm import NODE_CLASS_MAPPINGS as evaluate_llm_mappings, NODE_DISPLAY_NAME_MAPPINGS as evaluate_llm_display_mappings
 from .nodes.llm_query_api import NODE_CLASS_MAPPINGS as llm_query_api_mappings, NODE_DISPLAY_NAME_MAPPINGS as llm_query_api_display_mappings
 from .nodes.llm_query_api_batch import NODE_CLASS_MAPPINGS as llm_query_api_batch_mappings, NODE_DISPLAY_NAME_MAPPINGS as llm_query_api_batch_display_mappings
+from .nodes.twitter_scraper import NODE_CLASS_MAPPINGS as twitter_scraper_mappings, NODE_DISPLAY_NAME_MAPPINGS as twitter_scraper_display_mappings
+from .nodes.twitter_thread_scraper import NODE_CLASS_MAPPINGS as twitter_thread_scraper_mappings, NODE_DISPLAY_NAME_MAPPINGS as twitter_thread_scraper_display_mappings
+from .nodes.twitter_user_scraper import NODE_CLASS_MAPPINGS as twitter_user_scraper_mappings, NODE_DISPLAY_NAME_MAPPINGS as twitter_user_scraper_display_mappings
 
 
 # Combine all mappings
@@ -63,6 +69,9 @@ NODE_CLASS_MAPPINGS = {
     **evaluate_llm_mappings,
     **llm_query_api_mappings,
     **llm_query_api_batch_mappings,
+    **twitter_scraper_mappings,
+    **twitter_thread_scraper_mappings,
+    **twitter_user_scraper_mappings,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -75,6 +84,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **evaluate_llm_display_mappings,
     **llm_query_api_display_mappings,
     **llm_query_api_batch_display_mappings,
+    **twitter_scraper_display_mappings,
+    **twitter_thread_scraper_display_mappings,
+    **twitter_user_scraper_display_mappings,
 }
 
 # WEB_DIRECTORY remains relative to the root package directory

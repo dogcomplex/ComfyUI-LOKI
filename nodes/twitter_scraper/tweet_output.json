@@ -1,0 +1,71 @@
+{
+    "created_at": "Sun May 04 20:50:10 +0000 2025",
+    "attached_urls": [],
+    "attached_urls2": [],
+    "attached_media": [
+        "https://pbs.twimg.com/tweet_video_thumb/GqIgy_oW0AAKs9g.jpg"
+    ],
+    "tagged_users": [],
+    "tagged_hashtags": [],
+    "favorite_count": 22,
+    "bookmark_count": 11,
+    "quote_count": 2,
+    "reply_count": 5,
+    "retweet_count": 5,
+    "text": "(1/2) The Fed’s Strategic Pause | Why Markets May Have Misread the Post-Tariff Terrain\n\nOver the last 72 hours, markets were dealt a sharp reality check. Following weeks of dovish positioning and escalating expectations of a near-term Fed rate cut, the release of April’s ISM and https://t.co/bxoW48hiDs",
+    "is_quote": true,
+    "is_retweet": false,
+    "language": "en",
+    "user_id": "1448432122881101826",
+    "id": "1919132465605607788",
+    "conversation_id": "1919132465605607788",
+    "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+    "views": "5846",
+    "poll": {},
+    "user": {
+        "created_at": "Wed Oct 13 23:35:47 +0000 2021",
+        "default_profile": true,
+        "description": "Macro strategy | Systemic risk & policy intel | Powered by AI + human insight | Featured by RealClearPolitics & https://t.co/d5MEzDJBQE",
+        "entities": {
+            "description": {
+                "urls": [
+                    {
+                        "display_url": "InvestX.fr",
+                        "expanded_url": "http://InvestX.fr",
+                        "url": "https://t.co/d5MEzDJBQE",
+                        "indices": [
+                            112,
+                            135
+                        ]
+                    }
+                ]
+            }
+        },
+        "fast_followers_count": 0,
+        "favourites_count": 13711,
+        "followers_count": 26882,
+        "friends_count": 689,
+        "has_custom_timelines": true,
+        "is_translator": false,
+        "listed_count": 585,
+        "location": "",
+        "media_count": 824,
+        "name": "EndGame Macro",
+        "normal_followers_count": 26882,
+        "pinned_tweet_ids_str": [
+            "1912562154848346353"
+        ],
+        "possibly_sensitive": false,
+        "profile_banner_url": null,
+        "profile_image_url_https": "https://pbs.twimg.com/profile_images/1554632419592003584/lRSfOnxJ_normal.jpg",
+        "screen_name": "onechancefreedm",
+        "statuses_count": 3871,
+        "translator_type": "none",
+        "verified": false,
+        "want_retweets": null,
+        "withheld_in_countries": [],
+        "id": "VXNlcjoxNDQ4NDMyMTIyODgxMTAxODI2",
+        "rest_id": "1448432122881101826",
+        "is_blue_verified": true
+    }
+}

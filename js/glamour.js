@@ -633,8 +633,16 @@ app.registerExtension({
                         allGlamours.forEach(widget => {
                             glamourStates.set(String(widget.parent.id), newState);
                         });
+                        // If veiling all, explicitly hide all overlays immediately
+                        if (!newState) {
+                            allGlamours.forEach(widget => {
+                                if (widget.overlay) {
+                                    widget.overlay.style.display = 'none';
+                                }
+                            });
+                        }
                         updateBottomRightToggle(); // Update the button state
-                        app.graph.setDirtyCanvas(true, true);
+                        app.graph.setDirtyCanvas(true, true); // Use true, true for potentially more forceful redraw
 
                         // If tooltip is currently visible, update its text immediately
                         if (glamourTooltipElement && glamourTooltipElement.style.display === 'block') {
@@ -781,7 +789,13 @@ app.registerExtension({
                             if (value === "All Glamoured") {
                                 allGlamours.forEach(widget => glamourStates.set(String(widget.parent.id), true));
                             } else if (value === "All Veiled") {
-                                allGlamours.forEach(widget => glamourStates.set(String(widget.parent.id), false));
+                                allGlamours.forEach(widget => {
+                                    glamourStates.set(String(widget.parent.id), false);
+                                    // Explicitly hide overlay immediately
+                                    if (widget.overlay) {
+                                        widget.overlay.style.display = 'none';
+                                    }
+                                });
                             } // "Mixed" does nothing when selected
 
                             updateBottomRightToggle(); // Update button appearance
