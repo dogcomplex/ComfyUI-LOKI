@@ -35,6 +35,7 @@ Layers must match each other in functionality as closely as possible in *intent*
 - A description of the current status of the node, including any known limitations or issues.
 - This should be updated as the node is developed to reflect the current state of the node
 - This is where we include lists of TODOs, tasks, planning, future work speculation, etc.
+- This is also an appropriate place to indicate the PRIORITY of the node in relation to work on other nodes in the project.
 
 #### NAME LAYER: `<node_name>_name.md`
 - A markdown file that contains the official full name of the node (English string with spaces), as well as any other naming information.

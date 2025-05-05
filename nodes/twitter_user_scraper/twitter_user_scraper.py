@@ -129,9 +129,10 @@ def find_objects_by_typename(data: Any, target_typename: str) -> List[Dict]:
     return found_objects
 # --- END Helper function ---
 
-def scrape_user_profile_and_tweets(profile_url: str, headless: bool = True) -> Optional[Dict]:
+def scrape_user_profile_and_tweets(profile_url: str, max_tweets: int = 20, headless: bool = True) -> Optional[Dict]:
     """
-    Scrapes public user profile data AND the initially visible tweets from a given URL.
+    Scrapes public user profile data AND tweets from a user's profile page,
+    simulating scrolling to potentially capture more than the initial batch.
     Returns a combined dictionary: {'profile': {...}, 'tweets': [...]}
     """
     profile_xhr_calls = []
@@ -141,16 +142,13 @@ def scrape_user_profile_and_tweets(profile_url: str, headless: bool = True) -> O
     initial_tweets = []
 
     def intercept_response(response):
-        """Capture relevant background requests for profile and tweets."""
         nonlocal profile_xhr_calls, tweets_xhr_calls
         try:
-            # Profile Data Endpoints
             if response.request.resource_type == "xhr" and ("UserByScreenName" in response.url or "UserByRestId" in response.url):
-                print(f"[Scraper Debug] Intercepted Profile XHR: {response.url}")
+                # print(f"[Scraper Info] Intercepted Profile XHR: {response.url}") # Optional Info
                 profile_xhr_calls.append(response)
-            # Initial Tweets Endpoint (based on user finding)
             elif response.request.resource_type == "xhr" and "/UserTweets" in response.url:
-                 print(f"[Scraper Debug] Intercepted Tweets XHR: {response.url}")
+                 # print(f"[Scraper Info] Intercepted Tweets XHR: {response.url}") # Optional Info
                  tweets_xhr_calls.append(response)
         except Exception as e:
             print(f"Error intercepting response: {e}")
@@ -168,68 +166,122 @@ def scrape_user_profile_and_tweets(profile_url: str, headless: bool = True) -> O
             print("Waiting for profile content selector...")
             try:
                  page.wait_for_selector("div[data-testid='primaryColumn']", timeout=30000)
-                 print("Profile container likely loaded. Waiting for XHRs...")
-                 page.wait_for_timeout(7000) # Slightly longer wait to catch both types of XHR
-            except Exception as e:
-                 print(f"Timeout or error waiting for selector: {e}. Proceeding.")
+                 print("Initial profile container loaded. Waiting briefly...")
+                 page.wait_for_timeout(5000) # Initial wait 
 
-            # --- Process Profile XHRs --- 
-            if not profile_xhr_calls:
-                print("No relevant User Profile XHR calls intercepted.")
-            else:
-                print(f"[Scraper Debug] Processing {len(profile_xhr_calls)} Profile XHR calls.")
-                for xhr in reversed(profile_xhr_calls):
-                    print(f"[Scraper Debug] Analyzing Profile XHR: {xhr.url}")
-                    try:
-                        data = xhr.json()
-                        user_payload = jmespath.search("data.user.result", data)
-                        if user_payload:
-                            print(f"[Scraper Debug] Found user payload in {xhr.url}")
-                            parsed_profile = parse_user(user_payload)
-                            if parsed_profile and not parsed_profile.get("error"):
-                                profile_data = parsed_profile # Store the valid profile
-                                print("[Scraper Debug] Successfully parsed valid user profile data.")
-                                break # Found profile, stop checking profile XHRs
-                    except Exception as e:
-                        print(f"[Scraper Debug] Error processing Profile XHR {xhr.url}: {e}")
-            
-            # --- Process Tweets XHRs (Using Python traversal) --- 
-            if not tweets_xhr_calls:
-                 print("No relevant User Tweets XHR calls intercepted.")
-            else:
-                 print(f"[Scraper Debug] Processing {len(tweets_xhr_calls)} UserTweets XHR calls.")
-                 for xhr in reversed(tweets_xhr_calls):
-                      print(f"[Scraper Debug] Analyzing Tweets XHR: {xhr.url}")
-                      try:
-                          data = xhr.json()
-                          
-                          # --- Use Python Recursive Search for Tweets --- 
-                          potential_tweet_payloads = find_objects_by_typename(data, "Tweet")
-                          # --- End Python Recursive Search --- 
-                          
-                          if not potential_tweet_payloads:
-                              print("[Scraper Debug] No potential tweet results found via recursive search in this Tweets XHR.")
-                              continue
-                          
-                          print(f"[Scraper Debug] Found {len(potential_tweet_payloads)} potential tweet results via recursive search in {xhr.url}.")
-                          tweet_payloads = potential_tweet_payloads # Already filtered slightly by helper
-                                
-                          if tweet_payloads:
-                              print(f"[Scraper Debug] Processing {len(tweet_payloads)} plausible tweet payloads from this XHR.")
-                              for payload in tweet_payloads:
-                                   parsed = parse_tweet(payload)
-                                   if parsed and parsed.get('id'):
-                                       if not any(t['id'] == parsed['id'] for t in initial_tweets):
-                                           initial_tweets.append(parsed)
-                              if initial_tweets:
-                                   print(f"[Scraper Debug] Added/updated {len(initial_tweets)} unique tweets from {xhr.url}.")
-                                   # Optionally break if only one XHR usually contains tweets
-                                   # break 
-                                   
-                      except json.JSONDecodeError:
-                          print(f"[Scraper Debug] Could not decode JSON from Tweets XHR: {xhr.url}")
-                      except Exception as e:
-                          print(f"[Scraper Debug] Error processing Tweets XHR {xhr.url}: {e}")
+                 # --- RE-ADD SCROLLING --- 
+                 scroll_attempts = 10 
+                 print(f"[Scraper Debug] Will attempt up to {scroll_attempts} scrolls to find up to {max_tweets} tweets.")
+                 consecutive_scrolls_with_no_new_tweets = 0 # Counter for early stopping
+                 
+                 for i in range(scroll_attempts):
+                     # --- Process currently intercepted XHRs --- 
+                     current_tweet_count = len(initial_tweets)
+                     # --- Process Profile XHRs (Subset - only find profile once) ---
+                     if not profile_data and profile_xhr_calls: 
+                         # ... (Same profile processing logic as before, only run once) ...
+                         for xhr in reversed(profile_xhr_calls): 
+                             try: 
+                                 data = xhr.json() 
+                                 user_payload = jmespath.search("data.user.result", data) 
+                                 if user_payload: 
+                                     parsed_profile = parse_user(user_payload) 
+                                     if parsed_profile and not parsed_profile.get("error"): 
+                                         profile_data = parsed_profile 
+                                         print("Successfully parsed valid user profile data.") 
+                                         break 
+                             except Exception as e: print(f"Error processing Profile XHR {xhr.url}: {e}") 
+                         profile_xhr_calls = [] # Clear processed profile calls
+                         
+                     # --- Process Tweets XHRs (Incremental) --- 
+                     if tweets_xhr_calls: 
+                         print(f"[Scraper Debug] Processing {len(tweets_xhr_calls)} new Tweets XHRs before scroll {i+1}...")
+                         new_tweets_in_batch = 0
+                         for xhr in reversed(tweets_xhr_calls): 
+                             if len(initial_tweets) >= max_tweets: break 
+                             try: 
+                                 data = xhr.json() 
+                                 payloads = find_objects_by_typename(data, "Tweet") 
+                                 if payloads: 
+                                     for p in payloads: 
+                                         if len(initial_tweets) >= max_tweets: break 
+                                         parsed = parse_tweet(p) 
+                                         if parsed and parsed.get('id') and not any(t['id'] == parsed['id'] for t in initial_tweets): 
+                                             initial_tweets.append(parsed) 
+                                             new_tweets_in_batch += 1
+                             except Exception as e: print(f"Error processing Tweets XHR {xhr.url}: {e}") 
+                         if new_tweets_in_batch > 0: 
+                             print(f"[Scraper Debug] Added {new_tweets_in_batch} tweets from recent XHRs. Total now: {len(initial_tweets)}.")
+                         tweets_xhr_calls = [] # Clear processed tweet calls for this iteration
+
+                     tweets_added_this_iteration = len(initial_tweets) - current_tweet_count
+                     
+                     # --- Early stopping logic --- 
+                     if tweets_added_this_iteration == 0:
+                         consecutive_scrolls_with_no_new_tweets += 1
+                         print(f"[Scraper Debug] No new tweets found in XHRs after scroll {i}. ({consecutive_scrolls_with_no_new_tweets} consecutive)")
+                     else:
+                         consecutive_scrolls_with_no_new_tweets = 0 # Reset counter if new tweets found
+
+                     if consecutive_scrolls_with_no_new_tweets >= 2:
+                         print("[Scraper Debug] Stopping scroll early: No new tweets found in last 2 attempts.")
+                         break
+                     # --- End Early stopping --- 
+                         
+                     # --- Now check max_tweets limit and scroll --- 
+                     if len(initial_tweets) >= max_tweets:
+                         print(f"[Scraper Debug] Reached max_tweets ({max_tweets}). Stopping scroll loop.") # Changed log slightly
+                         break 
+                         
+                     print(f"[Scraper Debug] Scrolling down attempt {i+1}/{scroll_attempts} (currently have {len(initial_tweets)} tweets)...")
+                     page.evaluate("window.scrollTo(0, document.body.scrollHeight)") # Scroll to bottom
+                     print(f"[Scraper Debug] Waiting after scroll {i+1}...")
+                     page.wait_for_timeout(5000) # Longer wait after scroll
+                     
+                 if len(initial_tweets) < max_tweets and consecutive_scrolls_with_no_new_tweets < 2:
+                    print("[Scraper Debug] Finished scroll attempts loop. Processing any remaining XHRs...")
+                 # --- END SCROLLING --- 
+
+                 print(f"Finished scroll/load phase. Processing final XHRs...") # Updated log
+            except Exception as e:
+                 print(f"Timeout or error waiting for selector/scroll: {e}. Proceeding with captured XHRs.")
+
+            # --- Final XHR Processing (ensure everything caught is processed) --- 
+            # Process profile one last time if missed
+            if not profile_data and profile_xhr_calls:
+                # ... (Same profile processing logic as above) ...
+                 for xhr in reversed(profile_xhr_calls): 
+                     try: 
+                         data = xhr.json() 
+                         user_payload = jmespath.search("data.user.result", data) 
+                         if user_payload: 
+                             parsed_profile = parse_user(user_payload) 
+                             if parsed_profile and not parsed_profile.get("error"): 
+                                 profile_data = parsed_profile 
+                                 print("Successfully parsed valid user profile data (final check).") 
+                                 break 
+                     except Exception as e: print(f"Error processing Profile XHR {xhr.url} (final check): {e}") 
+
+            # Process tweets one last time
+            if tweets_xhr_calls:
+                print(f"[Scraper Debug] Final processing of {len(tweets_xhr_calls)} remaining Tweets XHRs...")
+                new_tweets_in_batch = 0
+                for xhr in reversed(tweets_xhr_calls):
+                     if len(initial_tweets) >= max_tweets: break
+                     try: 
+                         data = xhr.json() 
+                         payloads = find_objects_by_typename(data, "Tweet") 
+                         if payloads: 
+                             for p in payloads: 
+                                 if len(initial_tweets) >= max_tweets: break 
+                                 parsed = parse_tweet(p) 
+                                 if parsed and parsed.get('id') and not any(t['id'] == parsed['id'] for t in initial_tweets): 
+                                     initial_tweets.append(parsed) 
+                                     new_tweets_in_batch +=1
+                     except Exception as e: print(f"Error processing Tweets XHR {xhr.url} (final check): {e}") 
+                if new_tweets_in_batch > 0:
+                    print(f"[Scraper Debug] Added {new_tweets_in_batch} tweets from final XHR processing. Final total: {len(initial_tweets)}.")
+            # --- End Final XHR Processing ---
 
             browser.close()
 
@@ -240,27 +292,37 @@ def scrape_user_profile_and_tweets(profile_url: str, headless: bool = True) -> O
         except Exception as close_err: print(f"Error closing browser: {close_err}")
         return None # Indicate failure
 
-    # --- Combine Results --- 
+    # --- Combine Results (Sort and Trim) --- 
     if profile_data or initial_tweets:
+        # Sort tweets by date (newest first) before trimming
+        try:
+            initial_tweets.sort(key=lambda t: t.get('created_at', ''), reverse=True)
+        except Exception as sort_e:
+             print(f"[Scraper Warning] Could not sort tweets by date: {sort_e}")
+             
+        # Trim to max_tweets
+        trimmed_tweets = initial_tweets[:max_tweets]
+        
         combined_result = {
-            "profile": profile_data or {}, # Use empty dict if profile not found
-            "tweets": initial_tweets    # Will be empty list if tweets not found
+            "profile": profile_data or {},
+            "tweets": trimmed_tweets 
         }
-        print(f"Successfully scraped. Profile found: {bool(profile_data)}, Tweets found: {len(initial_tweets)}")
+        print(f"Successfully scraped. Profile found: {bool(profile_data)}, Tweets returned: {len(trimmed_tweets)} (max requested: {max_tweets})")
         return combined_result
     else:
         print(f"Could not find profile or initial tweets.")
         return None
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Scrape public profile data from an X.com user URL.')
-    parser.add_argument('url', type=str, help='The URL of the user profile to scrape (e.g., https://x.com/elonmusk).')
+    parser = argparse.ArgumentParser(description='Scrape public profile data and recent tweets from an X.com user URL.')
+    parser.add_argument('url', type=str, help='The URL of the user profile to scrape.')
+    parser.add_argument('--max_tweets', type=int, default=20, help='Maximum number of tweets to attempt to scrape.')
     parser.add_argument('--output', type=str, default='user_profile_output.json', help='File path to save the output JSON.')
     parser.add_argument('--visible', action='store_true', help='Run the browser in visible mode.')
     args = parser.parse_args()
 
-    print(f"Attempting to scrape profile and initial tweets: {args.url}")
-    scraped_data = scrape_user_profile_and_tweets(args.url, headless=not args.visible)
+    print(f"Attempting to scrape profile and up to {args.max_tweets} tweets: {args.url}")
+    scraped_data = scrape_user_profile_and_tweets(args.url, max_tweets=args.max_tweets, headless=not args.visible)
 
     if scraped_data:
         print(f"Successfully scraped data. Saving to {args.output}")

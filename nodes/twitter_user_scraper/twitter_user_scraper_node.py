@@ -13,6 +13,7 @@ class LokiUserScraper:
         return {
             "required": {
                 "profile_url": ("STRING", {"multiline": False, "default": "https://x.com/Scrapfly_dev"}),
+                "max_tweets": ("INT", {"default": 20, "min": 1, "max": 200}),
             },
              "optional": {
                  "run_headless": ("BOOLEAN", {"default": True}),
@@ -25,10 +26,11 @@ class LokiUserScraper:
     CATEGORY = "LOKI/Web"
     OUTPUT_NODE = True
 
-    def scrape_user_and_tweets(self, profile_url: str, run_headless: bool = True):
-        print(f"[LokiUserScraper] Attempting to scrape profile & initial tweets: {profile_url}")
+    def scrape_user_and_tweets(self, profile_url: str, max_tweets: int, run_headless: bool = True):
+        print(f"[LokiUserScraper] Attempting to scrape profile & up to {max_tweets} tweets: {profile_url}")
         scraped_combined_dict: Optional[Dict] = scrape_user_profile_and_tweets(
             profile_url, 
+            max_tweets=max_tweets,
             headless=run_headless
         )
 
