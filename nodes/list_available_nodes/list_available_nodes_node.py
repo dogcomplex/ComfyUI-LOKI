@@ -4,228 +4,229 @@ import sys
 from pathlib import Path
 import requests
 from collections import defaultdict
-import re # For filename sanitization
+import re
 from typing import List, Dict, Optional
+import uuid
+from io import StringIO
+
+# Import the core logic
+from .list_available_nodes import load_extension_list
 
 # --- Node Definition ---
 
-class ListAvailableNodesNode:
+class ListAvailableNodes:
     """
-    Lists available ComfyUI custom node packages from ComfyUI-Manager's list.
-    Outputs the data as a JSON string and saves a Markdown file.
-    Requires ComfyUI-Manager to be installed or manually provide the cache path.
+    Lists available ComfyUI custom node packages from ComfyUI-Manager's list or a fallback URL.
+    Outputs the data in various formats (JSON string, Markdown string, list of JSON, list of Markdown).
     """
-
-    NODE_OUTPUT_DIR = Path(__file__).parent / "output"
+    _class_last_node_info_hash = None # Class variable for IS_CHANGED
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
-            "required": {
-                "trigger": ("*", {}), # Trigger execution
-                "output_format": (["json_string", "markdown_file"], {"default": "markdown_file"}),
-                "filename_prefix": ("STRING", {"default": "available_nodes"}),
-            },
+            "required": {},
             "optional": {
-                # Allow overriding the cache path if needed
                  "manager_cache_path_override": ("STRING", {"default": "", "multiline": False}),
                  "fallback_github_url": ("STRING", {"default": "https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json"})
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING") # JSON data, Markdown filepath
-    RETURN_NAMES = ("extensions_json", "markdown_filepath")
-    FUNCTION = "list_available_nodes"
-    CATEGORY = "utils/docs"
-    OUTPUT_NODE = True
+    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING") # Match list_installed_nodes
+    RETURN_NAMES = ("all_nodes_json", "summary_markdown", "node_json_list", "node_markdown_list")
+    FUNCTION = "list_available"
+    CATEGORY = "LOKI 🦊/System"
+    OUTPUT_NODE = False # Not writing files
 
     def __init__(self):
-        # Ensure the output directory exists
-        self.output_dir = ListAvailableNodesNode.NODE_OUTPUT_DIR
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        pass # No output dir needed
 
-    # --- Helper Functions (Adapted from original script) ---
-
+    # --- Helper: Generate Markdown for a single available node --- (Adapted from original write_extension_info)
     @staticmethod
-    def get_manager_path(override_path: str = None) -> Optional[str]:
-        """Find ComfyUI-Manager directory"""
-        if override_path and os.path.isdir(override_path):
-             print(f"Using provided manager path: {override_path}")
-             return override_path
+    def generate_single_node_markdown(ext: Dict) -> str:
+        """Generates detailed markdown documentation string for a single available node/extension."""
+        md_stream = StringIO()
 
-        # Try to find it relative to this node's location (common structure)
-        loki_dir = Path(__file__).parent.parent # Now inside nodes/, so go up twice
-        custom_nodes_dir = loki_dir.parent
-        manager_path = custom_nodes_dir / "ComfyUI-Manager"
+        # Normalize keys: 'reference' might be 'files'[0]
+        if 'reference' not in ext and 'files' in ext and ext.get('files'):
+             ext['reference'] = ext['files'][0]
 
-        if manager_path.is_dir():
-             print(f"Found manager path: {manager_path}")
-             return str(manager_path)
-        else:
-             print(f"Warning: Could not automatically find ComfyUI-Manager directory near {custom_nodes_dir}")
-             return None # Indicate not found
-
-
-    def load_extension_list(self, manager_path_override: str = None, fallback_url: str = None) -> List[Dict]:
-        """Load extension list from ComfyUI Manager's cache or fetch from GitHub"""
-        manager_dir = self.get_manager_path(manager_path_override)
-        cache_file = None
-        data = None
-
-        if manager_dir:
-            cache_file = Path(manager_dir) / "cache" / "custom-node-list.json"
-            if cache_file.exists():
-                print(f"Loading extensions from cache: {cache_file}")
-                try:
-                    with open(cache_file, 'r', encoding='utf-8') as f:
-                        content = f.read().strip()
-                        data = json.loads(content)
-                        # Check structure (can be list or dict with 'custom_nodes')
-                        if isinstance(data, dict) and 'custom_nodes' in data:
-                            return data['custom_nodes']
-                        elif isinstance(data, list):
-                            return data # Already a list
-                        else:
-                             print(f"Warning: Unexpected JSON structure in cache file: {type(data)}")
-                             data = None # Reset data to trigger fallback
-                except json.JSONDecodeError as e:
-                    print(f"JSON Parse Error in cache file {cache_file}: {e}")
-                    print("Content causing error:", content[:100], "...")
-                    # Fall through to GitHub fetch
-                except Exception as e:
-                    print(f"Error reading cache file {cache_file}: {e}")
-                    # Fall through to GitHub fetch
-            else:
-                print(f"Manager cache file not found at: {cache_file}")
-
-        # Fallback to direct GitHub fetch if cache failed or not found
-        if data is None and fallback_url:
-            print(f"Attempting to fetch extension list from: {fallback_url}")
-            try:
-                response = requests.get(fallback_url, timeout=15)
-                response.raise_for_status()
-                data = response.json()
-                 # Check structure again
-                if isinstance(data, dict) and 'custom_nodes' in data:
-                    return data['custom_nodes']
-                elif isinstance(data, list):
-                    return data
-                else:
-                     print(f"Error: Unexpected JSON structure from GitHub URL: {type(data)}")
-                     raise ValueError("Invalid data structure from fallback URL")
-
-            except requests.exceptions.RequestException as e:
-                print(f"Error fetching extension list from {fallback_url}: {e}")
-                raise # Re-raise network errors
-            except json.JSONDecodeError as e:
-                 print(f"JSON Parse Error from {fallback_url}: {e}")
-                 raise # Re-raise parse errors
-            except Exception as e:
-                 print(f"Unexpected error fetching from {fallback_url}: {e}")
-                 raise # Re-raise other errors
-        elif data is None:
-             raise FileNotFoundError("Could not load extension list from cache or fallback URL.")
-
-
-    def write_markdown(self, extensions: List[Dict], output_filepath: Path):
-        """Write extension information to markdown file"""
-        print(f"Writing available nodes markdown to: {output_filepath}")
-        with output_filepath.open('w', encoding='utf-8') as f:
-            f.write("# Available ComfyUI Custom Node Packages (from ComfyUI-Manager list)\n\n")
-
-            # Group by category if available
-            by_category = defaultdict(list)
-            uncategorized = []
-
-            for ext in extensions:
-                # Normalize keys: 'reference' might be 'files'[0] in some versions
-                if 'reference' not in ext and 'files' in ext and ext['files']:
-                     ext['reference'] = ext['files'][0]
-
-                category = ext.get('category')
-                if category and isinstance(category, str): # Ensure category is a string
-                    by_category[category].append(ext)
-                else:
-                    uncategorized.append(ext)
-
-            # Write categorized extensions
-            for category in sorted(by_category.keys()):
-                f.write(f"## {category}\n\n")
-                # Sort by title (case-insensitive)
-                sorted_extensions = sorted(by_category[category], key=lambda x: x.get('title', x.get('name', '')).lower())
-                for ext in sorted_extensions:
-                    self.write_extension_info(f, ext)
-
-            # Write uncategorized extensions
-            if uncategorized:
-                f.write("## Uncategorized\n\n")
-                sorted_extensions = sorted(uncategorized, key=lambda x: x.get('title', x.get('name', '')).lower())
-                for ext in sorted_extensions:
-                    self.write_extension_info(f, ext)
-
-
-    def write_extension_info(self, f, ext: Dict):
-        """Write individual extension information to the file handle"""
-        title = ext.get('title', ext.get('name', 'Unknown'))
-        f.write(f"### {title}\n\n")
+        title = ext.get('title', ext.get('name', 'Unknown Extension'))
+        md_stream.write(f"### {title}\n\n")
 
         if ext.get('description'):
-            f.write(f"{ext['description']}\n\n")
+            md_stream.write(f"{ext['description']}\n\n")
 
-        f.write(f"- **Author:** {ext.get('author', 'Unknown')}\n")
+        md_stream.write(f"- **Author:** {ext.get('author', 'Unknown')}\n")
 
-        reference = ext.get('reference') # Use normalized key
+        reference = ext.get('reference')
         if reference:
-             # Attempt to make it a clickable link if it looks like a URL
              if reference.startswith('http://') or reference.startswith('https://'):
-                 f.write(f"- **Repository/Reference:** [{reference}]({reference})\n")
+                 md_stream.write(f"- **Repository/Reference:** [{reference}]({reference})\n")
              else:
-                 f.write(f"- **Repository/Reference:** {reference}\n")
-
+                 md_stream.write(f"- **Repository/Reference:** {reference}\n")
 
         if ext.get('install_type'):
-            f.write(f"- **Install Type:** {ext['install_type']}\n")
+            md_stream.write(f"- **Install Type:** {ext['install_type']}\n")
 
-        # Use 'nodes' key if 'nodeTypes' isn't present (older format?)
-        node_types = ext.get('nodeTypes', ext.get('nodes'))
+        node_types = ext.get('nodeTypes', ext.get('nodes')) # Handle alias
         if node_types and isinstance(node_types, list):
-            f.write("\n**Included Node Types:**\n")
-            for node_type in sorted(node_types): # Sort node types alphabetically
-                f.write(f"- `{node_type}`\n")
+            md_stream.write("\n**Included Node Types:**\n")
+            for node_type in sorted(node_types):
+                md_stream.write(f"- `{node_type}`\n")
 
-        f.write("\n---\n\n") # Separator
+        md_stream.write("\n---\n") # Separator
+        return md_stream.getvalue()
 
+    # --- Helper: Generate Summary Markdown String --- (Adapted from original write_markdown)
+    @staticmethod
+    def generate_summary_markdown(extensions: List[Dict]) -> str:
+        """Generates a condensed markdown summary string of available nodes/extensions."""
+        md_stream = StringIO()
+        md_stream.write("# Available ComfyUI Custom Nodes (Summary)\n\n")
 
-    # --- Node Execution Method ---
+        # Group by category if available
+        by_category = defaultdict(list)
+        uncategorized = []
+        for ext in extensions:
+            category = ext.get('category')
+            if category and isinstance(category, str):
+                by_category[category].append(ext)
+            else:
+                uncategorized.append(ext)
 
-    def list_available_nodes(self, trigger=None, output_format="markdown_file", filename_prefix="available_nodes", manager_cache_path_override=None, fallback_github_url=None):
-        print("Listing available nodes...")
-        extensions_json = "{}"
-        md_filepath = "Error: Could not generate file path" # Default error path
+        # Write categorized extensions
+        for category in sorted(by_category.keys()):
+            md_stream.write(f"## {category}\n\n")
+            sorted_extensions = sorted(by_category[category], key=lambda x: x.get('title', x.get('name', '')).lower())
+            for ext in sorted_extensions:
+                 title = ext.get('title', ext.get('name', 'Unknown Extension'))
+                 desc = ext.get('description', '').split('\n')[0]
+                 if len(desc) > 120: desc = desc[:117] + '...'
+                 author = ext.get('author', '?')
+                 md_stream.write(f"- **{title}** (by {author}): {desc}\n")
+            md_stream.write("\n")
 
+        # Write uncategorized extensions
+        if uncategorized:
+            md_stream.write("## Uncategorized\n\n")
+            sorted_extensions = sorted(uncategorized, key=lambda x: x.get('title', x.get('name', '')).lower())
+            for ext in sorted_extensions:
+                 title = ext.get('title', ext.get('name', 'Unknown Extension'))
+                 desc = ext.get('description', '').split('\n')[0]
+                 if len(desc) > 120: desc = desc[:117] + '...'
+                 author = ext.get('author', '?')
+                 md_stream.write(f"- **{title}** (by {author}): {desc}\n")
+            md_stream.write("\n")
+
+        return md_stream.getvalue()
+
+    # --- JSON Serialization Helper ---
+    @staticmethod
+    def _serialize_item(item):
+        # Basic serialization, extend if needed for complex types
         try:
-            extensions = self.load_extension_list(manager_cache_path_override, fallback_github_url)
-            extensions_json = json.dumps(extensions, indent=2)
+            json.dumps(item)
+            return item
+        except TypeError:
+            return repr(item)
 
-            if output_format == "markdown_file":
-                 # Sanitize prefix
-                 safe_prefix = re.sub(r'[^\w\-_\. ]', '_', filename_prefix)
-                 md_filename = f"{safe_prefix}.md"
-                 md_filepath = self.output_dir / md_filename
-                 self.write_markdown(extensions, md_filepath)
-                 print("Markdown file generated.")
-                 return (extensions_json, str(md_filepath.resolve()))
-            else: # json_string
-                 print("Outputting JSON string only.")
-                 return (extensions_json, "Not generated (JSON output)")
-
-        except FileNotFoundError as e:
-             print(f"Error: {e}")
-             error_json = json.dumps({"error": str(e)})
-             return (error_json, f"Error: {e}")
+    # --- Main Execution Logic ---
+    def list_available(self, manager_cache_path_override=None, fallback_github_url=None):
+        print("LOKI List Available Nodes: Executing...")
+        extensions = []
+        error_str = None
+        try:
+            extensions = load_extension_list(manager_cache_path_override, fallback_github_url)
         except Exception as e:
-            print(f"Error listing available nodes: {e}")
-            error_json = json.dumps({"error": f"Failed to list available nodes: {e}"})
-            # Provide a meaningful error message for the filepath
-            md_filepath = f"Error: {e}"
-            return (error_json, md_filepath) 
+            print(f"Error loading available node list: {e}")
+            error_str = f"Failed to load available nodes: {e}"
+
+        # Calculate hash of current results (even if errored, hash the error state)
+        current_hash = None
+        try:
+            data_to_hash = extensions if error_str is None else {"error": error_str}
+            serialized_info = json.dumps(data_to_hash, sort_keys=True, default=repr)
+            current_hash = hash(serialized_info)
+            print(f"Calculated current available nodes hash: {current_hash}")
+        except Exception as e:
+            print(f"Warning: Could not calculate hash for available nodes: {e}")
+            current_hash = hash(str(data_to_hash)) # Fallback hash
+
+        # Update the class hash *after* successful execution/hashing
+        ListAvailableNodes._class_last_node_info_hash = current_hash
+
+        # --- Output Generation ---
+        all_nodes_json_string = "{}"
+        summary_markdown_string = ""
+        node_json_list = []
+        node_markdown_list = []
+
+        if error_str:
+             all_nodes_json_string = json.dumps({"error": error_str})
+             summary_markdown_string = f"# Error\n\n{error_str}"
+             # node_json_list and node_markdown_list remain empty
+        else:
+            # 1. Generate Full JSON String
+            try:
+                 all_nodes_json_string = json.dumps(extensions, indent=4, default=self._serialize_item)
+            except Exception as json_err:
+                 print(f"Error serializing available node info to JSON: {json_err}")
+                 all_nodes_json_string = json.dumps({"error": "Failed to serialize available node info", "details": str(json_err)})
+
+            # 2. Generate Summary Markdown String
+            try:
+                summary_markdown_string = self.generate_summary_markdown(extensions)
+            except Exception as e:
+                print(f"Error generating summary markdown: {e}")
+                summary_markdown_string = f"# Error Generating Summary\n\n{e}"
+
+            # 3. & 4. Generate Lists
+            for ext_info in extensions:
+                ext_key = ext_info.get('name', ext_info.get('reference', str(uuid.uuid4())))
+                # JSON List Item
+                try:
+                    node_json_str = json.dumps({ext_key: ext_info}, indent=4, default=self._serialize_item)
+                    node_json_list.append(node_json_str)
+                except Exception as e:
+                    print(f"Error serializing single available node JSON ({ext_key}): {e}")
+                    node_json_list.append(json.dumps({"error": f"Failed to serialize node {ext_key}", "details": str(e)}))
+                # Markdown List Item
+                try:
+                    node_md_str = self.generate_single_node_markdown(ext_info)
+                    node_markdown_list.append(node_md_str)
+                except Exception as e:
+                     print(f"Error generating single available node markdown ({ext_key}): {e}")
+                     node_markdown_list.append(f"### Error: Node {ext_key}\n\n{e}\n---")
+
+        # Return the four outputs
+        return (all_nodes_json_string, summary_markdown_string, node_json_list, node_markdown_list)
+
+    @classmethod
+    def IS_CHANGED(cls, manager_cache_path_override=None, fallback_github_url=None):
+        """Check if the available node list has actually changed since the last run."""
+        print("LOKI List Available Nodes: IS_CHANGED check")
+        current_extensions = []
+        error_str = None
+        try:
+            current_extensions = load_extension_list(manager_cache_path_override, fallback_github_url)
+        except Exception as e:
+            print(f"  IS_CHANGED: Error loading list: {e}")
+            error_str = f"Failed to load list: {e}"
+
+        current_hash = None
+        try:
+            data_to_hash = current_extensions if error_str is None else {"error": error_str}
+            serialized_info = json.dumps(data_to_hash, sort_keys=True, default=repr)
+            current_hash = hash(serialized_info)
+            print(f"  IS_CHANGED current hash: {current_hash}")
+            print(f"  IS_CHANGED last class hash: {cls._class_last_node_info_hash}")
+        except Exception as e:
+            print(f"  Warning: Could not calculate hash for IS_CHANGED check: {e}")
+            return str(uuid.uuid4()) # Assume change if hashing fails
+
+        if current_hash != cls._class_last_node_info_hash:
+            print("  IS_CHANGED detected changes.")
+            return str(uuid.uuid4())
+        else:
+            print("  IS_CHANGED detected no changes.")
+            return cls._class_last_node_info_hash 

@@ -1,8 +1,21 @@
-from .nodes.glamour import GlamourNode
-from .nodes.twitter_scraper import TwitterScraper
-from .nodes.twitter_thread_scraper import TwitterThreadScraper
-from .nodes.twitter_user_scraper import TwitterUserScraper
-from .nodes.list_installed_nodes import ListInstalledNodes
+import importlib
+import subprocess
+import sys
+import os
+
+# Import mappings from all node submodules within the 'nodes' directory
+from .nodes.glamour import GlamourNode, NODE_CLASS_MAPPINGS as glamour_mappings, NODE_DISPLAY_NAME_MAPPINGS as glamour_display_mappings
+from .nodes.scribe import NODE_CLASS_MAPPINGS as scribe_mappings, NODE_DISPLAY_NAME_MAPPINGS as scribe_display_mappings
+from .nodes.list_installed_nodes import ListInstalledNodes, NODE_CLASS_MAPPINGS as list_installed_mappings, NODE_DISPLAY_NAME_MAPPINGS as list_installed_display_mappings
+from .nodes.list_available_nodes import ListAvailableNodes, NODE_CLASS_MAPPINGS as list_available_mappings, NODE_DISPLAY_NAME_MAPPINGS as list_available_display_mappings
+from .nodes.filter_nodes import NODE_CLASS_MAPPINGS as filter_nodes_mappings, NODE_DISPLAY_NAME_MAPPINGS as filter_nodes_display_mappings
+from .nodes.generate_filter_prompt import NODE_CLASS_MAPPINGS as generate_prompt_mappings, NODE_DISPLAY_NAME_MAPPINGS as generate_prompt_display_mappings
+from .nodes.evaluate_relevance_llm import NODE_CLASS_MAPPINGS as evaluate_llm_mappings, NODE_DISPLAY_NAME_MAPPINGS as evaluate_llm_display_mappings
+from .nodes.llm_query_api import NODE_CLASS_MAPPINGS as llm_query_api_mappings, NODE_DISPLAY_NAME_MAPPINGS as llm_query_api_display_mappings
+from .nodes.llm_query_api_batch import NODE_CLASS_MAPPINGS as llm_query_api_batch_mappings, NODE_DISPLAY_NAME_MAPPINGS as llm_query_api_batch_display_mappings
+from .nodes.twitter_scraper import TwitterScraper, NODE_CLASS_MAPPINGS as twitter_scraper_mappings, NODE_DISPLAY_NAME_MAPPINGS as twitter_scraper_display_mappings
+from .nodes.twitter_thread_scraper import TwitterThreadScraper, NODE_CLASS_MAPPINGS as twitter_thread_scraper_mappings, NODE_DISPLAY_NAME_MAPPINGS as twitter_thread_scraper_display_mappings
+from .nodes.twitter_user_scraper import TwitterUserScraper, NODE_CLASS_MAPPINGS as twitter_user_scraper_mappings, NODE_DISPLAY_NAME_MAPPINGS as twitter_user_scraper_display_mappings
 
 
 # Register the custom node with ComfyUI
@@ -11,15 +24,17 @@ NODE_CLASS_MAPPINGS = {
     "LokiTweetScraper": TwitterScraper,
     "LokiTweetThreadScraper": TwitterThreadScraper,
     "LokiTweetUserScraper": TwitterUserScraper,
-    "LokiListInstalledNodes": ListInstalledNodes
+    "LokiListInstalledNodes": ListInstalledNodes,
+    "LokiListAvailableNodes": ListAvailableNodes
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "LokiGlamour": "🌘 Glamour",
+    "LokiGlamour": "🌘 Glamour (LOKI)",
     "LokiTweetScraper": "🐦📜 Scrape Tweet (LOKI)",
     "LokiTweetThreadScraper": "🐦📜 Scrape Tweet Thread (LOKI)",
     "LokiTweetUserScraper": "🐦👤 Scrape Tweet User (LOKI)",
-    "LokiListInstalledNodes": "📜🔍 List Installed Nodes (LOKI)"
+    "LokiListInstalledNodes": "📜🔍 List Installed Nodes (LOKI)",
+    "LokiListAvailableNodes": "🌐🔍 List Available Nodes (LOKI)"
 }
 
 WEB_DIRECTORY = "./js"
@@ -32,9 +47,6 @@ __author__ = "LOKI🦊"
 
 # AUTO-IMPORTING VARIOUS PIP PACKAGES: ====================
 
-import importlib
-import subprocess
-import sys
 
 REQUIRED_PACKAGES = [
     "git+https://github.com/THUDM/ImageReward.git",
@@ -53,21 +65,6 @@ for pkg in REQUIRED_PACKAGES:
         # Attempt to install:
         subprocess.run([sys.executable, "-m", "pip", "install", pkg])
 
-# Import mappings from all node submodules within the 'nodes' directory
-from .nodes.glamour import NODE_CLASS_MAPPINGS as glamour_mappings, NODE_DISPLAY_NAME_MAPPINGS as glamour_display_mappings
-from .nodes.scribe import NODE_CLASS_MAPPINGS as scribe_mappings, NODE_DISPLAY_NAME_MAPPINGS as scribe_display_mappings
-from .nodes.list_installed_nodes import NODE_CLASS_MAPPINGS as list_installed_mappings, NODE_DISPLAY_NAME_MAPPINGS as list_installed_display_mappings
-from .nodes.list_available_nodes import NODE_CLASS_MAPPINGS as list_available_mappings, NODE_DISPLAY_NAME_MAPPINGS as list_available_display_mappings
-from .nodes.filter_nodes import NODE_CLASS_MAPPINGS as filter_nodes_mappings, NODE_DISPLAY_NAME_MAPPINGS as filter_nodes_display_mappings
-from .nodes.generate_filter_prompt import NODE_CLASS_MAPPINGS as generate_prompt_mappings, NODE_DISPLAY_NAME_MAPPINGS as generate_prompt_display_mappings
-from .nodes.evaluate_relevance_llm import NODE_CLASS_MAPPINGS as evaluate_llm_mappings, NODE_DISPLAY_NAME_MAPPINGS as evaluate_llm_display_mappings
-from .nodes.llm_query_api import NODE_CLASS_MAPPINGS as llm_query_api_mappings, NODE_DISPLAY_NAME_MAPPINGS as llm_query_api_display_mappings
-from .nodes.llm_query_api_batch import NODE_CLASS_MAPPINGS as llm_query_api_batch_mappings, NODE_DISPLAY_NAME_MAPPINGS as llm_query_api_batch_display_mappings
-from .nodes.twitter_scraper import NODE_CLASS_MAPPINGS as twitter_scraper_mappings, NODE_DISPLAY_NAME_MAPPINGS as twitter_scraper_display_mappings
-from .nodes.twitter_thread_scraper import NODE_CLASS_MAPPINGS as twitter_thread_scraper_mappings, NODE_DISPLAY_NAME_MAPPINGS as twitter_thread_scraper_display_mappings
-from .nodes.twitter_user_scraper import NODE_CLASS_MAPPINGS as twitter_user_scraper_mappings, NODE_DISPLAY_NAME_MAPPINGS as twitter_user_scraper_display_mappings
-
-
 # Combine all mappings
 NODE_CLASS_MAPPINGS = {
     **glamour_mappings,
@@ -83,6 +80,7 @@ NODE_CLASS_MAPPINGS = {
     **twitter_thread_scraper_mappings,
     **twitter_user_scraper_mappings,
     **list_installed_mappings,
+    **list_available_mappings,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -99,6 +97,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **twitter_thread_scraper_display_mappings,
     **twitter_user_scraper_display_mappings,
     **list_installed_display_mappings,
+    **list_available_display_mappings,
 }
 
 # WEB_DIRECTORY remains relative to the root package directory
@@ -110,10 +109,7 @@ __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY']
 
 
 # --- PIP Requirements (Keep existing logic) ---
-import importlib
-import subprocess
-import sys
-import os
+
 
 if "pytest" not in sys.modules and os.environ.get("SKIP_PIP_INSTALL") != "1":
     print("🐍 Checking LOKI PIP requirements...")

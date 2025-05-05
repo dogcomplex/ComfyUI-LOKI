@@ -1,0 +1,39 @@
+{
+  "node_name": "list_available_nodes",
+  "version": "0.1.0",
+  "inputs": {
+    "manager_cache_path_override": {
+      "type": "STRING",
+      "description": "Optional path to manually specify the ComfyUI-Manager directory.",
+      "required": false,
+      "default": ""
+    },
+    "fallback_github_url": {
+      "type": "STRING",
+      "description": "URL to fetch the custom-node-list.json if local cache fails.",
+      "required": false,
+      "default": "https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json"
+    }
+  },
+  "outputs": {
+    "all_nodes_json": {
+        "type": "STRING",
+        "description": "A JSON string containing the entire list of available nodes/extensions."
+    },
+    "summary_markdown": {
+        "type": "STRING",
+        "description": "A Markdown string summarizing the available extensions."
+    },
+    "node_json_list": {
+        "type": "LIST",
+        "subtype": "STRING",
+        "description": "A list of JSON strings, each representing one available extension."
+    },
+     "node_markdown_list": {
+        "type": "LIST",
+        "subtype": "STRING",
+        "description": "A list of Markdown strings, each detailing one available extension."
+    }
+  },
+  "constants": {}
+} 

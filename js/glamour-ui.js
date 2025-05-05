@@ -302,9 +302,9 @@ export class GlamourUI {
                 transform: scale(1);
             }
             #glamour-toggle-button.glamour-hidden {
-                opacity: 0;
-                transform: scale(0.8);
-                pointer-events: none;
+                opacity: 0 !important;
+                transform: scale(0.8) !important;
+                pointer-events: none; /* This prevents interaction */
             }
 
             /* Veil Icon Animation (applied via JS) */

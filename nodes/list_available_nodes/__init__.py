@@ -1,9 +1,11 @@
-from .list_available_nodes_node import ListAvailableNodesNode
+from .list_available_nodes_node import ListAvailableNodes
 
 NODE_CLASS_MAPPINGS = {
-    "ListAvailableNodes": ListAvailableNodesNode
+    "LokiListAvailableNodes": ListAvailableNodes
 }
+
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ListAvailableNodes": "📜🔍 List Available Nodes (Manager)"
+    "LokiListAvailableNodes": "🌐🔍 List Available Nodes (LOKI)"
 }
+
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS'] 
