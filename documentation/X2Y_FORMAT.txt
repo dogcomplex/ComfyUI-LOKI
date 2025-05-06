@@ -1,696 +1,256 @@
-Please consider the following taxonomy for classifying various AI generation workflows.  Its purpose is to loosely categorize and encourage simplistic single-purpose workflow steps which can provide abstract characterizations of functional behavior.  In particular, these will be used to classify and abstractly define ComfyUI and python script workflows for AI generation and curation.
+# AI Workflow Taxonomy and Naming Convention
 
+## 1. Introduction & Purpose
 
+Please consider the following taxonomy for classifying various AI generation workflows. Its purpose is to loosely categorize and encourage simplistic single-purpose workflow steps which can provide abstract characterizations of functional behavior. In particular, these will be used to classify and abstractly define ComfyUI and python script workflows for AI generation and curation.
 
-TASK:  To build on this taxonomy, please list as many valid distinct examples of AI generation tasks which might originate from the "T" (text) classifier as you can.  i.e. tasks under T2T, T2I, etc.  Focus on building a list of distinctive tasks that would likely require functionally-different workflows, rather than being semantic or stylistic differences.  Label any variations which require or produce more than one type of data (e.g. T and I) or variations which use multiple types of data (e.g. T+) accordingly.
-
-
-
-
-FORMAT CATEGORIES: ------------------------
-
-T (text)
-I (image)
-V (video)
-M (mesh)
-S (sound/speech)
-C (command/code)
-D (data, structured text)
-G (game, interactive media)
-R (robotics, real-world)
-
-
-In general, we refer to any category as "X"
-
-Each category may have additional nuance:
-
-X - singular, or small scale (e.g. a singular image)
-X+ - multiple, or large scale (e.g. very large images, or batches of images)
-
-
-We write the resulting conversion operation like I2T (shorthand) or Image_to_Text (longform).  Multiples are like I+2T or Images_to_Text (e.g. analysis of multiple images to a text summary).  Multiples are more generic than singular (i.e. a I+ workflow could cover a singular I too)
-
-When creating conversion functions, most of the time multiples (e.g. T+2V+) can be performed with simpler individual functions or 1-to-N functions (e.g. T2V, or T+2V or T2V+).
-
-Additional common flags:
-- Live - includes realtime, streaming or interactive stuff
-- Fast - indicated a particularly speedy version, usually low fidelity
-- Secure - indicates encrypted inputs/outputs or security-oriented script
-
-When naming, use the shorthand designation first (considering multiple), followed by any relevant flags, then any specifics of the workflow technique (e.g. the model it's specific to).
-Any workflow may have configuration details and general execution involved to perform its actions without considering those as the C (Code) or D (Data) in the naming scheme - they're part of the workflow program itself, rather than the inputs/outputs.
-
-Combinations of multiple categories are concatenated together, so e.g. a workflow with Text and Image to Image would be "TI2I".  However, this is likely a "code smell" - we can likely decompose this into simpler workflows which do one at a time.  When we're ready to bubble up multiple configs/media/etc together in a single workflow, they will probably be represented in an interactive layer - in which case we might use "G2I" to control the overal image generation
+The goal is to build a list of distinctive tasks that would likely require functionally-different workflows, rather than being semantic or stylistic differences.
 
-In general, distinctions between categories are meant to be based more around the nuances of AI models and program specifics that need to be employed to focus on that particular type of data.  When in doubt, use the one which will more specifically target the data in question.
+## 2. Format Categories
 
+The core categories represent distinct types of data commonly used in AI workflows:
 
+*   **T** (text)
+*   **I** (image)
+*   **V** (video)
+*   **M** (mesh)
+*   **S** (sound/speech) - *Note: Standardized from 'A' used in earlier drafts.*
+*   **C** (command/code) - Refers to code/commands as *data* (input/output), distinct from the workflow's own execution logic or configuration.
+*   **D** (data, structured text)
+*   **G** (game, interactive media)
+*   **R** (robotics, real-world) - *Note: This category relates to controlling or interacting with physical systems or processes.*
 
-EXAMPLES: -------------------
+In general, we refer to any category as "X".
 
-T2I:  Generates an image according to a text prompt.  Basic, generic. 
-T2I+:  Generates multiple images according to a text prompt.  Also could classify generating a very large composite image according to a text prompt.
-T+2I:  Generates an image according to multiple text prompts, or a very large text file.
-T+2I+:  Generates multiple images (or a very big composite image) from multiple text prompts (or a very large text file).
-T2I_Fast:  Generates images quickly from a text prompt
-T2I_Fast_SDTurbo:  Generates images quickly from a text prompt, specifically using the StableDiffusion Turbo
-
-
-CLASSIFYING EXAMPLES: ------------------
-
-LoRA: D (data).  Let's consider them a general data format.  
-AI model:  D+ (data+)
-Book: T+ (text+)
-Books: T+ (text+) - maybe T++ if we wanted to differentiate further
-Prompt: T (arguably almost C command, but it's not executable)
-Paragraph: T - fairly short
-Chapter: T+ probably
-512x512 Image: I - kinda the base expectation
-4k Image: I or I+ possibly, depending on whether it requires additional trouble to design
-Image folder: I+
-5 second Video: V
-GIF: V
-5 minute Video: V or V+, depending on whether it requires additional trouble to design
-Movie: V+
-Command-line script: C (command)
-Zapier API call: C (command)
-Python Script: C (command / code)
-Github code repo: C+ - as these tend to get too large for simple handling
-Windows UI Program: G (game) - because of the interactive nature and visual elements, consider this as a game
-HTML text element: C 
-HTML text file: C+ - since its fairly large typically
-Rendered HTML page: G (game) because of the UI stuff
-JSON: D
-CSV Table: D
-CSV Tables: D+
-Database: D+
-File Folder: D
-File Folders: D+
-Architectural Drawing: I+ (since they're typically very large and detailed)
-Executable Program: G (game)
-Image Viewer Program: G (game) (which converts images I+ to a G game-like format)
-Programming IDE: G (game) (user experience producing text, data, or code files)
-Image Diff: I (image) since the diff is itself an image interpolating two frames
-Video Frames: V (video) even though it's a collection of multiple images
-Github Readme: T (depending on length, T+)
-Reddit Thread: D or T, depending on whether we're just dumping it or using it as structured data
-RAR File: D
-Font: I+ (?)  - since it basically can be defined by images of each character?  (debateable?)
-ComfyUI Workflow (JSON): C+ long program
-ComfyUI particular Node Settings: C
-ComfyUI Interactive UI: G
-ComfyUI log: T+
-ComfyUI Metadata JSON: D or C+ (it's JSON that defines the program)
-Python Requirements.txt: D since it's essentially a structured data file of dependencies (like JSON)
-Video Editor with UI: G
-Image Caption: T
-Image Rating: D (or T since it's so minimally structured)
-Circuit Diagram: I, C, or D depending on particular format?
-Image Mask: I
-Video Frame: I (singular image)
-Disk Drive: D+
-AI Agent: C+ or G+ (depending on whether it navigates/presents using visual elements)
-Game-playing Agent: G+
-Shader: G (quite minimal visual program)
-3D Printer Object: M (mesh)
-3D Printer Print: R (robotics)
-CAD Design: M (mesh)
-Blender Object: M
-Blender Scene: M+
-Song 30s: S
-Speech: S
-Song 3m: S probably
-Movie Script: T+
-Character Personality Script: T+
-Robot Arm (Cobot) Commands: R
-Drone Flightplan: R
-Map: I+
-Investment Plan: T+ ?
-Android App: C+
-Cooking Recipe: R
-Textile Recipe: R
-Factory Plan: R+
-Embeddings: D (in general, could be I or S or V or whatever if handling a specific type)
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Thought about expanding task categories for 32 seconds
-Below is a comprehensive (yet concise) mapping of eight primary categories—Text (T), Image (I), Video (V), Sound (S), Mesh (M), Command/Code (C), Data (D), and Game (G)—with example tasks for each possible X2Y transformation. Each task is given a short snake_case functional name plus a quick descriptor of its use case.
-
-Because there are many combinations (8×8 = 64), the goal is to give broad coverage with a couple of representative examples each, rather than an exhaustive list of possible tasks.
-
-1. Text → X
-1.1 T → T (Text-to-Text)
-summarize_text
-Compress long text into a brief summary.
-translate_text
-Convert text from one language to another.
-1.2 T → I (Text-to-Image)
-generate_image_from_text
-Produce an illustration or concept art based on a textual description.
-text_guided_image_layout
-Arrange an image’s composition (e.g., positions of elements) from text instructions.
-1.3 T → V (Text-to-Video)
-create_video_script
-Draft a structured script or storyboard from text prompts.
-describe_video_sequence
-Outline a video shot list or scene sequence from narrative text.
-1.4 T → A (Text-to-Sound)
-text_to_speech
-Convert written text into spoken sound.
-text_based_sound_effects
-Generate simple sound effects or jingles derived from keywords in text.
-1.5 T → M (Text-to-Mesh)
-text_to_mesh
-Create basic 3D geometry from textual descriptions (e.g., “a pyramid with a doorway”).
-label_mesh_from_text
-Tag or annotate an existing 3D model’s components based on text instructions.
-1.6 T → C (Text-to-Command/Code)
-text_to_code
-Generate programming scripts or functions from written instructions.
-draft_algorithms_from_text
-Convert conceptual text descriptions into pseudo-code or algorithmic outlines.
-1.7 T → D (Text-to-Data)
-text_to_structured_data
-Parse text into JSON, CSV, or other tabular formats.
-create_sql_query_from_text
-Build SQL statements from natural language requests (e.g., “show me all customers in New York”).
-1.8 T → G (Text-to-Game)
-text_based_level_design
-Outline or generate a game level’s layout from textual instructions.
-create_game_dialogue
-Produce branching dialogues or interactive story scripts for a game based on text input.
-2. Image → X
-2.1 I → T (Image-to-Text)
-describe_image
-Generate a textual caption or summary for an image.
-tag_image_content
-Assign textual tags or labels to objects and features in an image.
-2.2 I → I (Image-to-Image)
-apply_image_style
-Style-transfer to apply an artistic or visual style to a source image.
-super_res_image
-Enhance resolution of an image without losing detail.
-2.3 I → V (Image-to-Video)
-animate_image
-Create a simple video pan, zoom, or morph from a static image.
-image_sequence_generation
-Produce a short video sequence or transition effects from a single image reference.
-2.4 I → A (Image-to-Sound)
-sonify_image
-Convert visual features into sound patterns or music.
-image_to_spoken_description
-Read out loud a descriptive caption of the image.
-2.5 I → M (Image-to-Mesh)
-reconstruct_3d_from_image
-Generate a 3D model from one or more 2D images.
-texture_mesh_from_image
-Extract texture data from an image and apply it to a 3D mesh.
-2.6 I → C (Image-to-Command/Code)
-code_from_screenshot
-Perform OCR on a code snippet in an image and convert it into executable text.
-ui_layout_to_code
-Translate a UI mockup image into front-end layout code (e.g., HTML/CSS).
-2.7 I → D (Image-to-Data)
-extract_table_from_image
-Identify and convert tabular data in an image (e.g., a chart or table) into CSV or JSON.
-metadata_generation_from_image
-Produce structured metadata (dimensions, color profiles, objects) from an image.
-2.8 I → G (Image-to-Game)
-sprite_sheet_generation
-Convert character or object images into game-ready sprite sheets.
-image_based_level_background
-Create a side-scrolling game background from a panoramic image.
-3. Video → X
-3.1 V → T (Video-to-Text)
-transcribe_video_dialogue
-Convert spoken parts of a video into text subtitles.
-video_summary_text
-Produce a condensed textual synopsis of video content.
-3.2 V → I (Video-to-Image)
-extract_keyframes
-Capture important frames from a video for documentation.
-thumbnail_generation
-Generate representative thumbnails at intervals.
-3.3 V → V (Video-to-Video)
-video_style_transfer
-Apply artistic styles frame-by-frame to transform video appearance.
-frame_rate_enhancement
-Increase the smoothness by adding interpolated frames.
-3.4 V → A (Video-to-Sound)
-extract_sound_track
-Separate and export the sound stream from a video file.
-video_to_soundscape
-Generate an ambient soundtrack aligned with video motions or themes.
-3.5 V → M (Video-to-Mesh)
-scene_3d_reconstruction
-Build 3D scenes or objects from video footage (e.g., photogrammetry).
-motion_capture_mesh
-Extract skeletal or mesh movement data from video for animation.
-3.6 V → C (Video-to-Command/Code)
-video_instructions_to_code
-Interpret a “how-to” video into an automated script or set of code instructions.
-vision_based_code_trigger
-Execute certain code routines when specific events in video are detected.
-3.7 V → D (Video-to-Data)
-video_metadata_extraction
-Convert video properties (e.g., timestamps, object counts) into structured data.
-action_logs_from_video
-Generate event logs or detection timestamps in CSV/JSON format.
-3.8 V → G (Video-to-Game)
-cutscene_generation
-Extract or create cutscenes from existing video for in-game story events.
-video_based_level_scripting
-Adapt a video’s storyline into interactive sequences for a game engine.
-4. Sound → X
-4.1 A → T (Sound-to-Text)
-speech_to_text
-Convert spoken sound into transcribed text.
-sound_captioning
-Summarize an sound clip’s content (e.g., events, music type) as text.
-4.2 A → I (Sound-to-Image)
-sound_waveform_visualization
-Generate static or stylized waveforms as images.
-spectrogram_art
-Create an artistic spectrogram image from sound frequencies.
-4.3 A → V (Sound-to-Video)
-music_video_generation
-Produce reactive visuals or animations based on musical beats.
-sound_to_motion_graphics
-Generate dynamic text or shapes in sync with speech or sound effects.
-4.4 A → A (Sound-to-Sound)
-voice_style_transfer
-Transform one voice or accent into another while preserving speech content.
-noise_cancellation
-Remove background noise or enhance clarity.
-4.5 A → M (Sound-to-Mesh)
-soundwave_3d_modeling
-Convert sound waveforms into 3D geometry.
-acoustic_mesh_analysis
-Analyze a 3D environment’s acoustic properties, generating geometry-based sound feedback.
-4.6 A → C (Sound-to-Command/Code)
-speech_to_code
-Dictate programming code verbally.
-sound_command_trigger
-Execute code or commands based on spoken triggers.
-4.7 A → D (Sound-to-Data)
-sound_to_key_metrics
-Extract loudness, tempo, pitch range into structured data.
-spoken_form_data_entry
-Fill forms or CSV fields by speaking the values.
-4.8 A → G (Sound-to-Game)
-voice_controlled_gameplay
-Translate spoken commands or sound cues into in-game actions.
-sound_driven_narrative
-Generate interactive story elements or branching paths driven by sound input.
-5. Mesh → X
-5.1 M → T (Mesh-to-Text)
-describe_3d_model
-Produce textual descriptions or metadata about a 3D model’s features.
-mesh_instructions_text
-Convert the structure of a mesh into tutorial text or assembly instructions.
-5.2 M → I (Mesh-to-Image)
-render_mesh
-Generate 2D images from 3D models (e.g., turntable renders).
-stylized_mesh_render
-Apply illustrative or artistic effects when rendering the 3D object.
-5.3 M → V (Mesh-to-Video)
-mesh_animation
-Create motion or rotations from static 3D models.
-simulation_video_from_mesh
-Render physical or mechanical simulations as a video.
-5.4 M → A (Mesh-to-Sound)
-mesh_resonance_sound
-Simulate how sound waves would resonate in or around a 3D structure.
-geometry_to_sonification
-Convert mesh geometry data (edges, faces) into musical sequences.
-5.5 M → M (Mesh-to-Mesh)
-mesh_simplification
-Reduce polygon count or optimize a 3D model’s topology.
-mesh_morphing
-Transform one 3D shape into another while retaining some topology reference.
-5.6 M → C (Mesh-to-Command/Code)
-mesh_to_procedural_code
-Translate a 3D model into programmatic geometry generation (e.g., OpenSCAD script).
-mesh_inspection_scripts
-Generate code for analyzing geometry (volumes, collisions) based on the mesh.
-5.7 M → D (Mesh-to-Data)
-export_mesh_as_data
-Convert 3D model geometry into a structured format (e.g., vertex arrays, JSON).
-mesh_attributes_table
-Create CSV/JSON with each polygon or vertex data (normals, UVs, etc.).
-5.8 M → G (Mesh-to-Game)
-import_mesh_to_game_engine
-Prepare 3D assets for a specific game engine with correct format/colliders.
-mesh_to_level_geometry
-Use a 3D model as a playable environment or level in a game.
-6. Command/Code → X
-6.1 C → T (Code-to-Text)
-explain_code
-Generate human-readable explanations for code snippets.
-code_documentation
-Create text-based API docs or comments from code structures.
-6.2 C → I (Code-to-Image)
-code_visualization
-Produce flowcharts or UML diagrams from code.
-plot_data_in_image
-Execute code that plots graphs or diagrams as images.
-6.3 C → V (Code-to-Video)
-automated_video_editing_scripts
-Code that programmatically cuts or merges videos, exporting as final footage.
-code_based_motion_graphics
-Generate animations or transitions using code instructions.
-6.4 C → A (Code-to-Sound)
-synthesize_sound_from_code
-Use scripts to generate tones, sequences, or even entire compositions.
-automated_sound_post_processing
-Apply batch scripts to clean or mix sound files.
-6.5 C → M (Code-to-Mesh)
-procedural_mesh_generation
-Write code that dynamically creates 3D models (e.g., fractals, parametric forms).
-scripted_mesh_modification
-Adjust or refine an existing 3D model’s geometry programmatically.
-6.6 C → C (Code-to-Command/Code)
-code_refactoring
-Take existing code and produce improved or cleaned-up code.
-transpile_code
-Convert code from one programming language to another.
-6.7 C → D (Code-to-Data)
-run_code_for_data_extraction
-Execute scripts to extract or generate structured datasets.
-convert_script_output_to_json
-Gather console outputs from code and store them in structured data formats.
-6.8 C → G (Code-to-Game)
-generate_game_engine_scripts
-Write code for game logic, physics, or AI.
-interactive_code_sandbox
-Let code produce a small playable or interactive environment (e.g., a mini-game).
-7. Data → X
-7.1 D → T (Data-to-Text)
-data_to_report
-Convert CSV or JSON data into a human-readable summary or narrative.
-sql_results_to_explained_text
-Take query results and generate easy-to-read text descriptions.
-7.2 D → I (Data-to-Image)
-data_visualization
-Generate charts, graphs, or infographics from structured data.
-metadata_based_image_tags
-Use data entries to create or update image metadata.
-7.3 D → V (Data-to-Video)
-data_driven_animation
-Produce timeline animations or dynamic plots from time-series data.
-chart_video_generation
-Generate an explanatory video of data trends over time.
-7.4 D → A (Data-to-Sound)
-data_sonification
-Convert numeric series into musical or tonal sequences.
-structured_data_tts
-Read structured data sets aloud (e.g., “Product A: 50 units sold.”).
-7.5 D → M (Data-to-Mesh)
-point_cloud_to_mesh
-Turn coordinate data (XYZ) into a 3D mesh.
-structured_shape_generation
-Convert parametric data into 3D geometric models.
-7.6 D → C (Data-to-Command/Code)
-generate_scripts_from_spreadsheet
-Create shell or batch scripts based on CSV/JSON data.
-data_driven_config_files
-Produce config or code files (e.g., Dockerfiles, CI scripts) from structured specs.
-7.7 D → D (Data-to-Data)
-format_conversion
-Convert data from one structured format to another (e.g., CSV to JSON).
-data_validation_and_cleaning
-Generate a cleaned version of data with standardized schemas.
-7.8 D → G (Data-to-Game)
-parametric_game_level
-Use structured data (maps, stats) to automatically generate game levels or scenarios.
-data_driven_game_events
-Dynamically script in-game events or behaviors from external data feeds.
-8. Game → X
-8.1 G → T (Game-to-Text)
-export_game_dialogue
-Convert in-game dialogue or story text into a standalone script.
-summarize_game_session
-Log or describe a playthrough in plain text (e.g., “Player defeated 5 enemies”).
-8.2 G → I (Game-to-Image)
-screenshot_generation
-Automatically capture key frames or achievements as images.
-game_asset_export
-Convert game scenes or assets into static images for marketing or documentation.
-8.3 G → V (Game-to-Video)
-replay_highlights_extraction
-Generate highlight videos from recorded game sessions.
-machinima_creation
-Capture in-game footage and produce cinematic sequences.
-8.4 G → A (Game-to-Sound)
-export_game_sound
-Separate or dump in-game music, sound effects, or voice lines as sound files.
-dynamic_soundtrack_analysis
-Study how the game’s sound evolves over time and output a structured track.
-8.5 G → M (Game-to-Mesh)
-extract_3d_assets
-Pull level geometry or character models into standard 3D mesh formats.
-game_map_to_mesh
-Turn a game’s tiled map or voxel world into an editable 3D mesh.
-8.6 G → C (Game-to-Command/Code)
-generate_mod_scripts
-Convert in-game settings or events into modding scripts for further customization.
-export_game_logic
-Derive code logic or AI routines from a compiled or scripted game environment.
-8.7 G → D (Game-to-Data)
-game_telemetry_export
-Convert in-game metrics (score, performance) into CSV, JSON, or SQL.
-player_action_logs
-Export a structured log of all player inputs and events.
-8.8 G → G (Game-to-Game)
-engine_porting
-Migrate or adapt a game from one engine to another (e.g., Unity to Unreal).
-import_game_assets
-Transfer assets or levels from one game environment into a new one.
-Summary & Further Improvements
-Broad Coverage: With these eight categories—Text, Image, Video, Sound, Mesh, Command/Code, Data, and Game—plus their pairwise transformations, we capture a wide range of AI and content-creation workflows.
-
-
-
-
-1. Text (T) vs. Text+ (T+)
-T (singular)
-Refers to a single piece of text—like a short paragraph, a sentence, a single document, or one prompt.
-
-T+ (multiple or large)
-Could represent:
-
-Multiple separate texts (e.g., a batch of documents).
-A single very large text corpus (e.g., a whole book, an entire dataset of textual logs).
-Implications for Tasks
-T2I (single → single) vs. T+2I (many → single or many):
-
-T2I (singular): Generate one image from a single text prompt.
-T+2I (multiple): Generate multiple images (or a large collage) from a batch of text inputs or a long text.
-T2T (single → single) vs. T+2T (multiple → multiple):
-
-T2T (singular): Summarize or translate one text snippet.
-T+2T (multiple): Summarize or translate an entire corpus, potentially outputting many translations or aggregated results.
-In general, T+ tasks often introduce batch processing or iterative transformations over a large text set.
-
-2. Image (I) vs. Image+ (I+)
-I (singular)
-A single image—e.g., a photo, a digital illustration, or a snapshot.
-
-I+ (multiple or large)
-
-A batch of images (e.g., a dataset of 1,000 pictures).
-A single extremely large image (e.g., a gigapixel or panoramic image requiring specialized handling).
-Implications for Tasks
-I2T (single → single) vs. I+2T (multiple → multiple):
-
-I2T (singular): Caption or describe one image.
-I+2T (multiple): Caption many images (batch image captioning), or parse sections of an ultra-high-res image.
-I2M (single → single) vs. I+2M (multiple → multiple):
-
-I2M (singular): Reconstruct a 3D model from one image (possibly approximate).
-I+2M (multiple): Photogrammetry from multiple photos to produce a single high-fidelity 3D model or multiple separate models.
-3. Video (V) vs. Video+ (V+)
-V (singular)
-One video clip or a short single recording.
-
-V+ (multiple or large)
-
-A set of many video clips (e.g., entire library or dataset).
-One extremely long video or real-time stream that’s treated as a continuous, large input.
-Implications for Tasks
-V2T vs. V+2T:
-
-V2T (singular): Generate subtitles or a summary for a single video clip.
-V+2T (multiple): Large-scale video analysis across multiple clips (e.g., automatically generating transcripts and summaries for an entire YouTube channel or security footage).
-V2V vs. V+2V:
-
-V2V (singular): Apply style transfer or frame interpolation to one clip.
-V+2V (multiple): Batch process a whole set of clips or create one combined production from multiple input videos (like a compilation).
-4. Sound (S) vs. Sound+ (A+)
-A (singular)
-A single sound track or recording—could be music, speech, or sound effects.
-
-A+ (multiple or large)
-
-Multiple separate sound files (e.g., an album of songs, library of sound effects).
-A very long sound recording (e.g., a 10-hour lecture or a continuous stream).
-Implications for Tasks
-A2T vs. A+2T:
-
-A2T (singular): Transcribe or process one sound clip.
-A+2T (multiple): Handle batch transcription for many files or huge datasets (e.g., a podcast series).
-A2A vs. A+2A:
-
-A2A (singular): Transform or enhance a single sound track (noise reduction).
-A+2A (multiple): Batch sound processing, mixing, or concatenation across many tracks.
-5. Mesh (M) vs. Mesh+ (M+)
-M (singular)
-A single 3D mesh—like one object or a relatively simple 3D scene.
-
-M+ (multiple or large)
-
-Multiple distinct meshes or a single large environment with many objects.
-Could also refer to complex 3D scenes with multiple sub-meshes (e.g., an entire city).
-Implications for Tasks
-M2I vs. M+2I:
-
-M2I (singular): Render a single 3D model from one angle.
-M+2I (multiple): Render multiple models or a big scene from multiple angles, possibly generating a suite of images.
-M2M vs. M+2M:
-
-M2M (singular): Morph or simplify one mesh.
-M+2M (multiple): Batch transform many meshes, or manipulate a large scene’s sub-components in a coordinated way.
-6. Command/Code (C) vs. Command/Code+ (C+)
-C (singular)
-One piece of code, script, or command sequence (e.g., a single Python script, a short function).
-
-C+ (multiple or large)
-
-A codebase with many files or modules.
-A single highly complex program or system (e.g., an entire application with thousands of lines).
-Implications for Tasks
-C2T vs. C+2T:
-
-C2T (singular): Generate documentation or explanation for one script.
-C+2T (multiple): Document or summarize an entire repository or multiple scripts.
-C2C vs. C+2C:
-
-C2C (singular): Refactor or transpile one script from language A to B.
-C+2C (multiple): Large-scale migration or refactoring for many files in a big project.
-7. Data (D) vs. Data+ (D+)
-D (singular)
-One structured dataset, table, or file (e.g., a single CSV, JSON, or a single SQL table).
-
-D+ (multiple or large)
-
-Multiple datasets or tables.
-One very large dataset (e.g., multi-gigabyte or multi-table database).
-Implications for Tasks
-D2T vs. D+2T:
-
-D2T (singular): Generate a textual report from one table or a small dataset.
-D+2T (multiple): Summarize or join data from multiple datasets or large-scale DBs into text form.
-D2D vs. D+2D:
-
-D2D (singular): Convert from CSV to JSON or perform minor transformations on one dataset.
-D+2D (multiple): ETL (Extract-Transform-Load) processes across many data sources, or heavy data warehousing tasks.
-8. Game (G) vs. Game+ (G+)
-G (singular)
-One game environment, one interactive scenario, or a single smaller-scale game project.
-
-G+ (multiple or large)
-
-A franchise or multiple game projects.
-A single massively complex game environment (e.g., an open-world or multi-layer interactive environment).
-Implications for Tasks
-G2T vs. G+2T:
-
-G2T (singular): Export a single game’s dialogue or session log as text.
-G+2T (multiple): Aggregate narrative data or session logs across many games or many sessions in a large-scale environment.
-G2G vs. G+2G:
-
-G2G (singular): Port or adapt one game to another engine.
-G+2G (multiple): Combine multiple game worlds or unify multiple game data sources into a new gaming experience or meta-environment.
-
-
-
-3.1 Single-Format Mappings (X2C or C2X)
-Below are potential use cases and snake_case functional names for each one.
-
-Text ↔ Command
-generate_code_from_text
-Creating code (scripts, functions, entire programs) from text prompts.
-explain_code_in_text
-Explaining code logic or functionality in plain text.
-text_guided_code_modification
-Adjusting or refactoring code using textual instructions.
-document_code_in_text
-Generating documentation or comments from code.
-Image ↔ Command
-generate_code_from_image
-Possibly OCR an image of code or convert a diagram into a code skeleton.
-visualize_code_output_as_image
-Using code to produce graphical outputs or data visualizations.
-image_guided_code_editing
-Adjusting code based on an image’s content or UI design (e.g., building HTML/CSS from a mockup).
-Video ↔ Command
-generate_code_from_video
-Interpreting demonstration videos (e.g., a user showing how to do something) into code or scripts.
-script_video_with_code
-Using code to control video editing tasks (e.g., timeline splicing, overlay creation).
-video_guided_code_execution
-Dynamically executing code based on recognized events in the video stream.
-Sound ↔ Command
-generate_code_from_sound
-Speech-to-code: verbally dictating code to be executed or stored.
-sound_guided_code_execution
-Triggering code routines based on specific sound commands.
-annotate_sound_processing_code
-Generating documentation or comments for sound-processing scripts.
-Mesh ↔ Command
-generate_code_from_mesh
-Converting 3D models into programmatic definitions (e.g., a script that re-creates the geometry).
-mesh_guided_code_execution
-Running code routines that adapt to 3D objects’ properties (e.g., automated environment generation).
-code_based_mesh_editing
-Programmatically editing or transforming 3D models via code instructions.
-3.2 Multimodal Combinations with Command (X + C)
-Below are some “hybrid” tasks where Command is used in conjunction with one more other format:
-
-Text + Command (T+C)
-auto_code_generation_with_text
-Combining textual requirements and code for real-time code generation and testing.
-live_command_explanation
-Displaying textual descriptions of code commands as they run.
-Image + Command (I+C)
-image_driven_code_generation
-Building code from UI mockups or architectural diagrams.
-command_guided_image_processing
-Using code to automate image transformations or filters.
-Video + Command (V+C)
-code_based_video_enhancements
-Writing scripts to automatically enhance or transform video.
-video_driven_code_debugging
-Real-time video feed triggers debugging or profiling routines in code.
-Sound + Command (A+C)
-voice_activated_code_execution
-Hands-free coding or command execution via voice.
-command_guided_sound_synthesis
-Using code scripts to produce or modify sound signals.
-Mesh + Command (M+C)
-procedural_mesh_creation_with_code
-Writing code that generates meshes algorithmically.
-mesh_analysis_via_code
-Automated analysis of 3D geometry (e.g., collision detection or volume calculation).
+### 2.1. Scale Modifiers (Singular vs. Multiple/Large)
+
+Each category may have additional nuance based on scale:
+
+*   **X** (singular): Represents a single instance or small scale (e.g., a singular image, a short text prompt).
+*   **X+** (multiple/large): Represents multiple instances or large scale (e.g., very large images, batches of images, a large text corpus, a complex codebase).
+
+**Examples:**
+
+*   **T** vs. **T+**: A single prompt (T) vs. a batch of documents or a whole book (T+).
+*   **I** vs. **I+**: A single photo (I) vs. a dataset of 1000 images or a gigapixel panorama (I+).
+*   **V** vs. **V+**: A single video clip (V) vs. an entire library of clips or a long continuous stream (V+).
+*   **S** vs. **S+**: A single sound file (S) vs. an album of songs or a 10-hour lecture (S+).
+*   **M** vs. **M+**: A single 3D object (M) vs. a complex scene with many objects or multiple distinct meshes (M+).
+*   **C** vs. **C+**: A single script or function (C) vs. a large codebase with many files (C+).
+*   **D** vs. **D+**: A single CSV file or JSON object (D) vs. multiple datasets or a multi-gigabyte database (D+).
+*   **G** vs. **G+**: A single game level or scenario (G) vs. a franchise or a massive open-world environment (G+).
+
+Tasks involving **X+** often imply batch processing, handling of larger data structures, or iterative operations not required for singular **X** tasks.
+
+### 2.2. Common Flags
+
+Additional flags can modify the workflow description:
+
+*   **Live**: Includes realtime, streaming, or interactive aspects.
+*   **Fast**: Indicates a particularly speedy version, usually lower fidelity.
+*   **Secure**: Indicates encrypted inputs/outputs or security-oriented processing.
+
+## 3. Naming Conventions & Workflow Decomposition
+
+### 3.1. Naming Structure
+
+Workflows are named using the shorthand designation first (incorporating scale via `+`), followed by any relevant flags (like `_Live`, `_Fast`, `_Secure`), and finally any specifics of the workflow technique or model used.
+
+**Structure:** `X[+]2Y[+]_Flag1_Flag2_SpecificTechnique`
+
+*   **Base Shorthand:** `X2Y` (e.g., `I2T` for Image-to-Text)
+*   **Longform:** `InputFormat_to_OutputFormat` (e.g., `Image_to_Text`)
+*   **Scale Modifiers:** Use `+` on input (X) or output (Y) or both, as needed (e.g., `I+2T`, `T2I+`, `T+2I+`).
+*   **Flags:** Append flags using underscores after the base X2Y notation. Multiple flags can be chained (e.g., `_Fast`, `_Live`, `_Fast_Live`).
+*   **Specifics:** Add further descriptive terms or model names at the end, separated by underscores.
+*   **Left-to-Right Importance:** The leftmost term is the most important general classifiers, with the rightmost being the most specific nuances.  This goes for tags too.
+*   **Dates, Versions, etc:** Only if necessary, append dates, versions, or other metadata to the end of the name.
+*   **Generators & Terminators:** For workflows initiated by a trigger rather than input data, use `C` as the input (e.g., `C2D+`). For workflows that consume input without producing data output, use the category of the medium where the state change occurs as the output (e.g., `D+2R` for physical/filesystem changes, `I2G` for UI changes).
+
+**Naming Examples:**
+
+*   `T2I`: e.g. Basic Text-to-Image.
+*   `T2I_Basic_Text_to_Image`: Longer form name, not preferred, but needed if ambiguous with other workflows.  The most general functional version gets the most general name.
+*   `T2I_Fast_SDTurbo`: Fast Text-to-Image using StableDiffusion Turbo.
+*   `I+2T`: Describe multiple images (batch input) to produce multiple text descriptions.
+*   `T+2I+`: Generate multiple/large images from multiple/large text inputs.
+*   `D+2I+_Live_GPS_to_Map`: Converts a stream of GPS coordinates (D+) into a live updating visual map (I+).
+*   `T2S_Fast_TTS_Preview`: Generates a quick, low-fidelity text-to-speech audio preview (S) from text (T).
+*   `I+2D_Secure_FacialRec`: Performs facial recognition on multiple input images (I+) to produce structured data (D) about recognized individuals, potentially with security/privacy considerations.
+*   `V2V_Live_StyleTransfer_Artistic`: Applies an artistic style transfer to a live video stream (V to V).
+*   `T2I_v1.0`: Initial version of the Text-to-Image workflow.
+*   `T2I_Fast_v1.0`: Updated version with faster processing using StableDiffusion Turbo.  The Fast feature tag qualifies it as a different version.
+*   `T2I_Fast_SDTurbo_v1.0`: Clarifying the specific model used goes before specific version too.
+*   `T2I_Fast_SDTurbo_2025-05-01`: Date-style versioning, if necessary
+*   `C2D+_List_ComfyUI_Nodes`: Command/trigger generates a structured list (D+) of nodes. (Note: by convention, use `C` as the input when there are no explicit input triggers.)
+*   `D+2D+_Delete_Files`: Consumes file data (D+) resulting in a filesystem (D+) state change.  (Deletions and sink operations should be classified according to the medium they're modifying)
+
+### 3.2. Workflow Decomposition Principle
+
+Combinations of multiple input categories (e.g., Text and Image to Image, potentially `TI2I`) are often a "code smell". It's generally preferable to decompose complex operations into simpler, chained workflows (e.g., `T2I` followed by `I2I`).
+
+However, exploring direct `X2Y` transformations helps define the *atomic* capabilities available, even if they are later chained together in practice. Interactive layers coordinating multiple inputs might be represented differently (e.g., `G2I` for a game-like interface controlling image generation).
+
+*Note:* General workflow configuration details and execution logic are considered part of the workflow program itself, not represented by 'C' or 'D' in the naming scheme unless code/data is the explicit *input* or *output* of the transformation step.
+
+## 4. Classifying Examples
+
+Here are examples of how different assets map to the categories, ordered by Category (T, I, V, M, S, C, D, G, R), then Ambiguity (least to most), then Quantity (singular to plural/large). Those near the bottom of each category are some of the more ambiguous examples which may be better suited to other categories depending on the circumstances and the specific focus of the workflow (e.g., treating a PDF as text T+ vs. its visual layout I+ vs. interactive elements G).
+
+### T (Text):
+*   **Prompt:** T (plain english text prompt)
+*   **LLM Response:** T (until parsed into a more formal format like D or C)
+*   **Paragraph:** T
+*   **Image Caption:** T
+*   **Plain Text File (.txt):** T or T+ (Depending on size)
+*   **Book / Multiple Books:** T+ (text+)
+*   **Chapter:** T+
+*   **ComfyUI log:** T+
+*   **Movie Script / Character Personality Script:** T+
+*   **Word Document (.docx) / Google Doc:** T+ (Primarily text).
+*   **Markdown File (.md):** T+ (Text with simple formatting markup).
+*   **Choose-Your-Own-Adventure Book:** T+ (Primarily text, non-interactive branching).
+*   **Github Readme:** T (or T+ depending on length)
+*   **Investment Plan:** T+ ?
+*   **Log File (e.g., server logs):** T+ (Large text) or D+ (if structured).
+*   **Reddit Thread:** D or T+ (depending on structure vs. raw text focus)
+*   **PDF Document:** I+ (image focus), T+ (text focus), D+ (forms), G (interactive); Default T+ if uncertain.
+
+### I (Image):
+*   **512x512 Image:** I (base expectation)
+*   **Image Diff:** I (diff represented as an image)
+*   **Image Mask / Video Frame:** I (singular image)
+*   **Music Sheet (Scanned Image):** I (Image format).
+*   **4k Image:** I or I+ (depending on specific handling needs)
+*   **Image folder:** I+
+*   **Architectural Drawing / Map:** I+ (typically large and detailed)
+*   **Geographic Map Tiles (Raster):** I+ (Collection of image tiles).
+*   **Satellite Imagery / Aerial Photo:** I+ (Large raster image data)
+*   **Scanned Paper Map:** I+ (Raster image data)
+*   **Font:** I+ (?) (Debatable - represents glyphs visually)
+*   **QR Code:** I (Image format) encoding D (data) or C (URL).
+*   **Photoshop/GIMP File (.psd, .xcf):** I+ (Complex layered image data) or G (if layer interaction focus).
+*   **Circuit Diagram:** I, C, or D (depending on format specifics)
+
+### V (Video):
+*   **5 second Video / GIF:** V
+*   **Video Frames:** V (collection of images treated as video)
+*   **Live Video Stream (e.g., webcam):** V or V+
+*   **5 minute Video:** V or V+ (depending on handling needs)
+*   **Movie:** V+
+*   **Screen Recording:** V+
+*   **360-degree Video:** V+
+*   **Motion Capture Data (.bvh, etc.):** V+ (movement sequence) or D+ (structured positional data).
+*   **Video Game Replay File:** G+ (game state/inputs) or V+ (simple playback).
+
+### M (Mesh):
+*   **3D Printer Object / CAD Design / Blender Object:** M (mesh)
+*   **Procedurally Generated Mesh (in memory):** M or M+
+*   **Blender Scene:** M+
+*   **Point Cloud Data (.ply, .las):** M+ (geometric points) or D+ (structured coordinates).
+*   **Voxel Data (e.g., medical scans):** M+ (Volumetric grid).
+*   **3D Scan Data (Raw Output):** M+ (Points or rough mesh).
+*   **Fractal Geometry (3D):** M+
+*   **Digital Elevation Model (DEM):** M+ (3D terrain mesh) or D+ (if raw grid data)
+*   **3D City Model:** M+ (Complex 3D scene)
+*   **Architectural Blueprint (CAD File):** M (Mesh data) or D (if opaque binary format).
+
+### S (Sound/Speech):
+*   **Song 30s / Speech / Song 3m:** S (sound/speech)
+*   **Synthesized Musical Performance (from MIDI/Score):** S or S+
+*   **Ultrasound Audio (Doppler, etc.):** S
+*   **Morse Code (Audio Transmission):** S (Audio signal encoding T).
+*   **Youtube Commentary:** S+ (audio)
+*   **Audio Book:** S+
+*   **Environmental Sound Recording (Field Recording):** S+
+*   **Audio Spectrogram (as data array):** D+ (Structured frequency data, not S itself).
+
+### C (Command/Code):
+*   **System Trigger / Internal Call (implicit input):** C
+*   **Command-line script / Python Script / Zapier API call:** C (command/code)
+*   **HTML text element:** C
+*   **URL / Filename:** C (single command/path)
+*   **ComfyUI Node Settings:** C (specific configuration)
+*   **CSS File:** C (Code defining presentation style).
+*   **JavaScript File (.js):** C (Source code); the running app state might be G.
+*   **Bash / Shell Script (.sh):** C (Command script).
+*   **Torrent Magnet URI:** C (Command/identifier string).
+*   **Github code repo:** C+
+*   **HTML text file:** C+ (typically large)
+*   **ComfyUI Workflow (JSON):** C+ (code/program definition)
+*   **Android App:** C+
+*   **Firmware Binary:** C+ (Low-level executable code).
+*   **LaTeX Document (.tex):** C+ (Code/markup for document typesetting).
+*   **Git Commit Diff:** C (Code change instructions) or T (if viewing textual changes).
+*   **MIDI File:** C (Sequencer instructions) or D (Structured musical event data).
+*   **SVG (Scalable Vector Graphics):** C (Code defining graphics) or I (rendered image).
+*   **SQL Database Dump (.sql):** C+ (Large script of SQL commands) or D+ (representing the data).
+*   **Spreadsheet with Macros:** C+ (Executable code is primary) or G (if UI interaction focus).
+
+### D (Data, structured text):
+*   **File (generic):** D (default for unspecified files)
+*   **RAR File:** D
+*   **Embeddings:** D (general data, could be specified like I-Embeddings, S-Embeddings etc.)
+*   **Torrent File:** D (Structured metadata).
+*   **VCard (.vcf):** D (Structured contact data).
+*   **iCalendar (.ics):** D (Structured calendar data).
+*   **Web Browser Cookie:** D (Small structured data).
+*   **Security Certificate (.pem, .crt):** D (Structured identity/key data).
+*   **Environment Variables (Set):** D (Set of simple key-value structured data).
+*   **Color Palette File (.aco, .gpl):** D (Structured color data).
+*   **Latitude/Longitude Coordinates:** D (Simple structured point data)
+*   **Hard Drive Space Information:** D (Metadata about D+)
+*   **JSON / CSV Table / requirements.txt:** D (structured data)
+*   **Subtitle File (.srt, .vtt):** D (Structured text data with timing).
+*   **LoRA:** D+ (data - consider them a general data format)
+*   **AI model:** D+ (data+)
+*   **CSV Tables / Database / File Folder / Disk Drive:** D+
+*   **Trained Neural Network Weights:** D+ (Large numerical data block).
+*   **User Profile (Settings, Preferences, History):** D+ (Structured user data).
+*   **EEG Brain Scan Data:** D+ (Complex time-series data).
+*   **DNA Sequence Data:** D+ (Structured sequence data).
+*   **GeoJSON / Shapefile:** D+ (Structured geospatial data).
+*   **ZIP / GZ / TAR Archive:** D+ (Structured container for other data).
+*   **Windows Registry Hive:** D+ (Hierarchical configuration database).
+*   **Scientific Data Format (e.g., HDF5, NetCDF):** D+ (Complex structured numerical data).
+*   **RSS / Atom Feed:** D+ (Structured data feed, typically XML).
+*   **System Process List:** D+ (Structured data about running processes).
+*   **Network Packet Capture (.pcap):** D+ (Structured network communication data).
+*   **Geographic Map Tiles (Vector):** D+ (Collection of structured vector data tiles).
+*   **Route/Boundary Data (GPX, KML):** D+ (Structured lines/polygons)
+*   **Email (.eml file / Standard Format):** D+ (Structured data with T+ body, headers, etc.).
+*   **YAML / XML / INI Config Files:** D (Structured configuration data).
+*   **Image Rating:** D (or T if minimally structured)
+*   **Music Sheet (Digital Format e.g., MusicXML):** D (Structured data) or C (Executable instructions for sequencer).
+*   **ComfyUI Metadata JSON:** D or C+ (data defining the program)
+*   **Live Stock Market Ticker:** D+ (Streaming structured data).
+*   **Live Sensor Feed (Temperature):** D+ (Structured, likely multiple readings) or R (if controlling robotics).
+*   **GPS Coordinates (live feed):** D+ (Streaming point data)
+*   **API Endpoint Definition (e.g., OpenAPI/Swagger spec):** D+ (Structured API definition) or C+ (executable contract).
+
+### G (Game, interactive media):
+*   **Shader:** G (minimal visual program)
+*   **ComfyUI Interactive UI:** G
+*   **Video Editor with UI:** G
+*   **Interactive Fiction (Text Adventure):** G (Core is interactivity, consumes/produces T).
+*   **PowerPoint (.pptx) / Google Slides:** G (Interactive presentation structure).
+*   **Compiled Shader (Binary):** G (Minimal visual program, non-human-readable C).
+*   **UI Element Deletion / State Change (result):** G
+*   **Windows UI Program / Rendered HTML page / Image Viewer / IDE / Executable Program:** G (game/interactive - due to UI/interactive nature)
+*   **Game-playing Agent:** G+
+*   **Docker Image:** G+ (Packaged runnable environment); Dockerfile is C.
+*   **Virtual Machine Disk Image (.vdi, .vmdk):** G+ (Runnable OS environment).
+*   **AI Agent:** C+ or G+ (depending on interaction/presentation)
+
+### R (Robotics, real-world):
+*   **3D Printer Print:** R (robotics - real-world output)
+*   **Robot Arm (Cobot) Commands / Drone Flightplan:** R
+*   **Haptic Feedback Pattern:** R (Real-world physical output instruction).
+*   **Cooking Recipe / Textile Recipe:** R (real-world instructions)
+*   **Cookie Recipe (as Instructions):** R (Real-world instructions).
+*   **Factory Plan:** R+
+
+## 6. Conclusion
+
+This taxonomy provides a framework for consistently describing and decomposing complex AI workflows into more manageable, reusable components based on their core data transformations.
 

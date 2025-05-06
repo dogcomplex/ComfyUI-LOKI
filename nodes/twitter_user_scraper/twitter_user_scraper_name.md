@@ -2,7 +2,7 @@
 
 ## TOKEN
 
-`👤🐦📜UserProfile`
+`🐦👤UserProfile`
 
 ## EMOJI_ICON
 
@@ -10,11 +10,11 @@
 
 ## RECIPE
 
-`URL(STRING) => UserData(DICT)`
+`🐦🔗 => 🐦👤`
 
 ## X2Y_FORMAT
 
-`URL2UserData`
+`C2D+_twitter_user_url_to_json`
 
 ## ALIASES
 

@@ -14,11 +14,11 @@ List Installed Nodes
 
 ## RECIPE
 
-`_ => NODE_LIST`
+`_ => 📜🔍`
 
 ## X2Y_FORMAT
 
-`_2D+` (Takes no specific input, outputs structured data - a list)
+`C2D+_installed_nodes` (Takes no specific input, outputs structured data - a list)
 
 ## ALIASES
 

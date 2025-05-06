@@ -14,11 +14,11 @@ List Available Nodes
 
 ## RECIPE
 
-`_ => NODE_LISTS` (Outputs various list formats)
+`_ => 🌐🔍` (Outputs various list formats)
 
 ## X2Y_FORMAT
 
-`_2D+` (Fetches external data, outputs structured data)
+`C2D+_available_nodes` (Fetches external data, outputs structured data)
 
 ## ALIASES
 
