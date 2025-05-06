@@ -1,0 +1,8 @@
+{
+  "node_name_internal": "GlamourNode",
+  "node_display_name": "🌘 Glamour (LOKI)",
+  "category": "LOKI 🦊/UI",
+  "output_node": true,
+  "version": "0.1.0",
+  "description": "Applies dynamic visual overlays and interactions to other nodes."
+} 

@@ -1,7 +1,7 @@
 export class GlamourUI {
     static RAINBOW_GRADIENT = 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96c93d)';
     static AURORA_GRADIENT = 'linear-gradient(90deg, rgba(255, 0, 150, 0.7), rgba(0, 255, 255, 0.5), rgba(0, 255, 255, 0.7))';
-    static GLAMOUR_NODE_TYPE = "Glamour 🦊";
+    static GLAMOUR_NODE_TYPE = "GlamourNode";
     
     static updateOverlayStyles(overlay, transform, nodeWidth, fullHeight, relativeScale, visible, isTransparencyEnabled) {
         console.log(`[Glamour] updateOverlayStyles received isTransparencyEnabled: ${isTransparencyEnabled}, visible: ${visible}`);

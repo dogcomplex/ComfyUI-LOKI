@@ -94,7 +94,7 @@ class GlamourNode:
                 relative_path = None
                 abs_warning = False
                 if abs_path.startswith(output_dir_abs):
-                     relative_path = os.path.relpath(abs_path, output_dir_abs).replace(os.sep, '/')
+                    relative_path = os.path.relpath(abs_path, output_dir_abs).replace(os.sep, '/')
                 else:
                     print(f"Warning: Timestamp check for non-output path: {abs_path}")
                     abs_warning = True
