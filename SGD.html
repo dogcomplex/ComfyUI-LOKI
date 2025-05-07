@@ -17,7 +17,7 @@ html,body{margin:0;padding:0;height:100%;width:100%;font-family:"Helvetica Neue"
 }
 .columns {
   display:flex;
-  gap:1in;
+  gap:3in;
   justify-content:space-between;
   position:relative;
 }
@@ -28,17 +28,22 @@ html,body{margin:0;padding:0;height:100%;width:100%;font-family:"Helvetica Neue"
   gap:0.3in;
 }
 .center-img {
-  float:right;
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
   width:2.4in;
   height:2.8in;
   border:1.8px dashed #888;
-  margin:0 0 0.15in 0.35in;
   display:flex;
   align-items:center;
   justify-content:center;
   font-size:9pt;
   color:#777;
+  z-index:1;
 }
+#img1 { top:11.6em; }
+#img2 { top:27.5em; }
+#img3 { top:43.2em; }
 h1{font-size:40pt;line-height:44pt;margin:0;text-align:center;}
 .big{font-size:26pt;font-weight:700;line-height:30pt;}
 .med{font-size:18pt;font-weight:600;line-height:22pt;margin:0;}
@@ -60,7 +65,7 @@ ul.small{margin:0;padding-left:1em;clear:both;}
 @media(max-width:900px){
   .columns{flex-direction:column;gap:0.5in;}
   .column{width:100%;}
-  .center-img{float:none;display:block;margin:0 auto 0.15in auto;}
+  .center-img{position:static;transform:none;margin:0 auto 0.15in auto;}
   h1{font-size:28pt;line-height:32pt;}
   .big{font-size:20pt;line-height:24pt;}
   .med{font-size:15pt;line-height:19pt;}
@@ -76,10 +81,13 @@ ul.small{margin:0;padding-left:1em;clear:both;}
     <p class="small" style="text-align:center;">These natural algorithms showcase how noisy, local updates can reliably discover globally robust solutions in high‑dimensional landscapes.</p>
 
     <div class="columns">
+      <div class="center-img" id="img1">Evolution Image</div>
+      <div class="center-img" id="img2">Synapse Image</div>
+      <div class="center-img" id="img3">Protein Funnel Image</div>
+
       <div class="column">
         <div>
           <p class="med">1 ◆ Evolutionary Search ≈ "Fitness‑SGD"</p>
-          <div class="center-img">Evolution Image</div>
           <ul class="small">
             <li><strong>Gradient Source –</strong> Relative fitness selects allele changes that ascend the fitness gradient [5,6].</li>
             <li><strong>Noise –</strong> Mutation & drift maintain exploration; large pop. ↔ small batch size trade‑off.</li>
@@ -89,7 +97,6 @@ ul.small{margin:0;padding-left:1em;clear:both;}
         </div>
         <div>
           <p class="med">2 ◆ Neural Plasticity ≈ Local Gradient Descent</p>
-          <div class="center-img">Synapse Image</div>
           <ul class="small">
             <li><strong>Gradient Source –</strong> Hebbian + STDP rules derived as exact gradients of free‑energy under predictive coding [3].</li>
             <li><strong>Experimental Evidence –</strong> In‑vitro cortical cultures follow predicted gradient flow when exposed to structured stimuli [9].</li>
@@ -99,7 +106,6 @@ ul.small{margin:0;padding-left:1em;clear:both;}
         </div>
         <div>
           <p class="med">3 ◆ Protein Folding & Over‑Damped Langevin Dynamics</p>
-          <div class="center-img">Protein Funnel Image</div>
           <ul class="small">
             <li><strong>Gradient Source –</strong> Conformational search obeys dX = −∇U·dt + √(2β⁻¹)·dWt – identical SDE to SGD with η↔β⁻¹ [12].</li>
             <li><strong>Landscape –</strong> Funnel‑shaped landscapes explain fast convergence despite astronomical state space – same empirical observation for over‑param nets [13].</li>
