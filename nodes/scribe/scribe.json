@@ -1,0 +1,12 @@
+{
+  "node_name": "scribe",
+  "version": "0.1.0",
+  "category": "LOKI 🦊/Documentation",
+  "output_node": true,
+  "defaults": {
+    "docs_base_url": "https://docs.getsalt.ai/md/Comfy/Nodes/",
+    "filename_prefix": "workflow_doc",
+    "output_format": "markdown",
+    "include_docs": true
+  }
+} 

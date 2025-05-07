@@ -7,8 +7,13 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime # Need to import datetime
 import server # Need server instance to access graph
 import re
+import folder_paths # Import folder_paths
 
-class ScribeNode:
+# --- DEBUG: Print server module path ---
+print(f"DEBUG: Imported 'server' module from: {getattr(server, '__file__', 'N/A')}")
+# --- End DEBUG ---
+
+class Scribe:
     """
     Scribe node that documents the current workflow state and node information
     """
@@ -19,32 +24,38 @@ class ScribeNode:
             "required": {
                 "include_docs": ("BOOLEAN", {"default": True}),
                 "output_format": (["json", "markdown"], {"default": "markdown"}),
-                 # Add trigger mechanism if needed, otherwise it runs on every change
-                "trigger": ("*", {}) # Accepts any input to trigger execution
             },
             "optional": {
+                "trigger": ("*", {}), # Optional input to delay execution
                 "docs_base_url": ("STRING", {
                     "default": "https://docs.getsalt.ai/md/Comfy/Nodes/",
                     "multiline": False
                 }),
                 "filename_prefix": ("STRING", {"default": "workflow_doc"}),
+            },
+            "hidden": { # Still need to declare we need these
+                "prompt": {"type": "PROMPT"},
+                "extra_pnginfo": {"type": "EXTRA_PNGINFO"},
+                "unique_id": {"type": "UNIQUE_ID"} 
             }
         }
 
     RETURN_TYPES = ("STRING",)
     FUNCTION = "scribe"
-    CATEGORY = "utils/docs" # Slightly more specific category
+    CATEGORY = "LOKI 🦊/Documentation" # Updated category
     OUTPUT_NODE = True # Output is saved to file and returned as string
 
-    # Store output dir relative to this node's file
-    NODE_OUTPUT_DIR = Path(__file__).parent / "output"
-
     def __init__(self):
-        # Ensure the node-specific output directory exists
-        self.output_dir = ScribeNode.NODE_OUTPUT_DIR
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        # Need access to the graph - typically via the server instance
-        self.server = server.PromptServer.instance
+        # Get the main ComfyUI output directory
+        output_dir = Path(folder_paths.get_output_directory())
+        # Define the LOKI-specific output path
+        self.output_dir = output_dir / "LOKI" / "Scribe" / "output"
+        try:
+            # Ensure the LOKI Scribe output directory exists
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            print(f"Warning: Could not create Scribe output directory at {self.output_dir}: {e}")
+            pass # Or handle fallback
 
     def fetch_node_docs(self, node_type: str, base_url: str) -> Optional[str]:
         """Fetch documentation for a node type from the docs site"""
@@ -265,40 +276,38 @@ class ScribeNode:
 
         return "\n".join(md_output)
 
-    def scribe(self, trigger=None, include_docs: bool = True, output_format: str = "markdown", docs_base_url: str = None, filename_prefix: str = "workflow_doc") -> tuple[str]:
-        """Main function to document the workflow"""
+    # Signature accepts all defined inputs (req, opt, hidden) as keyword args
+    def scribe(self, 
+               # Required
+               include_docs: bool = True, 
+               output_format: str = "markdown", 
+               # Optional
+               trigger=None, 
+               docs_base_url: str = None, 
+               filename_prefix: str = "workflow_doc",
+               # Hidden (expected to be passed by name)
+               prompt=None, 
+               extra_pnginfo=None, 
+               unique_id=None
+               ) -> tuple[str]:
+        """Main function to document the workflow, using prompt data passed via hidden input keyword argument."""
 
-        # Access the graph data from the server instance
-        # The exact way to get the *current* graph might vary slightly
-        # depending on ComfyUI version or context. PromptServer usually holds it.
-        if not hasattr(self.server, 'prompt_queue') or not hasattr(self.server.prompt_queue, 'get_latest_prompt'):
-             print("Error: Cannot access prompt queue or latest prompt.")
-             return ("Error: Cannot access workflow data.",)
+        # --- DEBUG: Log the received prompt argument --- 
+        print(f"DEBUG: scribe received prompt argument - Type: {type(prompt)}, Value: {prompt}")
+        # --- End DEBUG ---
 
-        # This might get the last *executed* prompt's workflow,
-        # which might differ from the current state in the UI if changes were made.
-        # Getting the live UI state is much harder from the backend.
-        latest_prompt = self.server.prompt_queue.get_latest_prompt()
-        if latest_prompt is None:
-            print("Error: No prompt executed yet in this session.")
-            return ("Error: No workflow executed yet.",)
+        # --- Validate Prompt Data --- 
+        if not isinstance(prompt, dict) or 'nodes' not in prompt:
+            error_msg = f"Error: Invalid or missing prompt data received via hidden input keyword argument. Type: {type(prompt)}"
+            print(error_msg)
+            return ("Error: Invalid prompt data received by node.",)
+        
+        # Use prompt_id from hidden unique_id if available (often execution ID?)
+        current_prompt_id = str(unique_id) if unique_id is not None else 'unknown' 
+        print(f"INFO: Scribe using prompt data passed via hidden input. Execution ID: {current_prompt_id}")
+        prompt_data = prompt
 
-        # The prompt data usually contains the workflow structure under 'workflow' or 'prompt'
-        # Adjust key based on inspection of `latest_prompt` structure
-        prompt_data = latest_prompt.prompt # Or latest_prompt.workflow, etc.
-
-        if not isinstance(prompt_data, dict) or 'nodes' not in prompt_data:
-            print(f"Error: Unexpected prompt data structure: {type(prompt_data)}")
-            # Attempt to access graph directly (might be less reliable)
-            if hasattr(self.server, 'graph'):
-                 prompt_data = self.server.graph.serialize() # Or similar method if available
-                 if 'nodes' not in prompt_data:
-                     print("Error: Could not find nodes in direct graph access either.")
-                     return ("Error: Could not find workflow nodes data.",)
-            else:
-                 return ("Error: Cannot access workflow nodes data.",)
-
-
+        # --- Proceed with processing --- 
         raw_nodes_data = {str(n['id']): n for n in prompt_data['nodes']} # Use dict indexed by ID
 
         workflow_info = {
@@ -307,7 +316,7 @@ class ScribeNode:
                 "include_docs": include_docs,
                 "output_format": output_format,
                 "docs_base_url": docs_base_url,
-                 "prompt_id": getattr(latest_prompt, 'id', 'unknown') # Add prompt ID if available
+                "prompt_id": current_prompt_id # Use best available ID
             },
             "nodes": {}
         }
@@ -331,7 +340,7 @@ class ScribeNode:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_prefix = re.sub(r'[^\w\-_\. ]', '_', filename_prefix) # Sanitize prefix
         filename = f"{safe_prefix}_{timestamp}.{output_format}"
-        filepath = self.output_dir / filename # Use pathlib Path object
+        filepath = self.output_dir / filename # Use the new output_dir path
 
         try:
             filepath.write_text(output_string, encoding="utf-8") # Use write_text

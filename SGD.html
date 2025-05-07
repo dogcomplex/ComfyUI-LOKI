@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>SGD in Nature: Close Analogues to AI Algorithms</title>
+<style>
+html,body{margin:0;padding:0;height:100%;width:100%;font-family:"Helvetica Neue",Arial,sans-serif;}
+/* Poster container now 50% wider (≈12 in) but responsive */
+#poster{
+  width:100%;               /* stretch to viewport */
+  max-width:12in;           /* ~50 % wider than letter portrait */
+  height:auto;              /* allow vertical scrolling on mobile */
+  margin:0 auto;
+  padding:0.35in;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+section{margin-bottom:0.35in;}
+
+h1{font-size:40pt;line-height:44pt;margin:0 0 0.15in 0;text-align:center;}
+.big{font-size:26pt;font-weight:700;line-height:30pt;margin:0.08in 0;}
+.med{font-size:18pt;font-weight:600;line-height:22pt;margin:0.06in 0;}
+.small{font-size:11pt;line-height:13pt;margin:0.03in 0;}
+
+.img-slot{
+  width:2.2in;height:2.2in; /* grow placeholders a bit for wider page */
+  border:1.8px dashed #888;
+  margin:0.06in auto 0.15in auto;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9pt;color:#777;
+}
+#refs{font-size:8.5pt;line-height:10.5pt;}
+li{margin-bottom:0.03in;}
+
+/* —— Mobile adjustments —— */
+@media(max-width:900px){
+  #poster{padding:0.25in;}
+  h1{font-size:28pt;line-height:32pt;}
+  .big{font-size:20pt;line-height:24pt;}
+  .med{font-size:15pt;line-height:19pt;}
+  .small{font-size:10pt;line-height:12pt;}
+  .img-slot{width:1.6in;height:1.6in;}
+  section{margin-bottom:0.25in;}
+}
+</style>
+</head>
+<body>
+  <div id="poster">
+    <!-- Title -->
+    <section>
+      <h1>SGD in Nature:<br/>Close Analogues to AI Algorithms</h1>
+      <p class="med" style="text-align:center;">Evidence that biological &amp; physical processes already exploit SGD‑like dynamics</p>
+    </section>
+
+    <!-- Core Thesis -->
+    <section>
+      <p class="big">Thesis ▶ Stochastic Gradient Descent obeys the same stochastic‑drift laws that underlie <em>evolution</em>, <em>neural adaptation</em>, and <em>thermodynamic relaxation</em>.</p>
+      <p class="small" style="text-align:center;">These natural algorithms showcase how noisy, local updates can reliably discover globally robust solutions in high‑dimensional landscapes.</p>
+    </section>
+
+    <!-- Evolution Analogy -->
+    <section>
+      <p class="med">1 ◆ Evolutionary Search ≈ "Fitness‑SGD"</p>
+      <div class="img-slot">Evolution Image</div>
+      <ul class="small">
+        <li><strong>Gradient Source –</strong> Relative fitness selects allele changes that ascend the fitness gradient [5,6].</li>
+        <li><strong>Noise –</strong> Mutation &amp; drift maintain exploration; large pop. ↔ small batch size trade‑off.</li>
+        <li><strong>Flat Peaks –</strong> Broad adaptive plateaus dominate rugged genotypic spaces, mirroring flat minima that generalize in DNNs [7].</li>
+        <li><strong>Formal link –</strong> Adaptive walk dynamics converge to SDE: dθ = +∇F·dt + √Σ·dW<sub>t</sub> (same form as SGD) [8].</li>
+      </ul>
+    </section>
+
+    <!-- Neural Plasticity -->
+    <section>
+      <p class="med">2 ◆ Neural Plasticity ≈ Local Gradient Descent</p>
+      <div class="img-slot">Synapse Image</div>
+      <ul class="small">
+        <li>Hebbian + STDP rules derived as <em>exact</em> gradients of free‑energy under predictive coding [3].</li>
+        <li>In‑vitro cortical cultures follow predicted gradient flow when exposed to structured stimuli [9].</li>
+        <li>Dopamine reward prediction error ≈ global scalar loss informing weight updates (RL‑style SGD) [10].</li>
+        <li>Credit assignment approximated through dendritic segregation &amp; feedback pathways – biological "backprop" surrogates [11].</li>
+      </ul>
+    </section>
+
+    <!-- Physics / Protein Folding -->
+    <section>
+      <p class="med">3 ◆ Protein Folding &amp; Over‑Damped Langevin Dynamics</p>
+      <div class="img-slot">Protein Funnel Image</div>
+      <ul class="small">
+        <li>Conformational search obeys dX = −∇U·dt + √(2β<sup>−1</sup>)·dW<sub>t</sub> – identical SDE to SGD with η↔β<sup>−1</sup> [12].</li>
+        <li>Funnel‑shaped landscapes explain fast convergence despite astronomical state space – same empirical observation for over‑param nets [13].</li>
+        <li>Simulated annealing &amp; cyclical learning‑rates both exploit temperature schedules to cross barriers.</li>
+        <li>Experiment: single‑molecule folding trajectories exhibit barrier hopping rates matching SGD escape statistics [14].</li>
+      </ul>
+    </section>
+
+    <!-- Thermodynamic Insight -->
+    <section>
+      <p class="med">4 ◆ Nonequilibrium Thermodynamics of SGD</p>
+      <div class="img-slot">Entropy Flow Image</div>
+      <ul class="small">
+        <li>SGD maintains a steady‑state entropy production: ⟨ΔS⟩ ≈ η·Var[g] – obeys fluctuation theorems [15].</li>
+        <li>Effective temperature T<sub>eff</sub> ∝ η·(B<sub>full</sub>/B<sub>mini</sub>) links batch size to exploration radius.</li>
+        <li>Flatter minima correspond to lower stationary entropy – predicting better generalization [1,2].</li>
+      </ul>
+    </section>
+
+    <!-- Disqualified Analogies -->
+    <section>
+      <p class="med">5 ◆ Non‑Analogues (Evidence Against)</p>
+      <div class="img-slot">Cross‑out Image</div>
+      <ul class="small">
+        <li><strong>Hamiltonian Mechanics</strong>: conservative, time‑reversible ⇒ no descent.</li>
+        <li><strong>Closed Quantum Evolution</strong>: unitary, preserves entropy; requires decoherence or baths to approximate SGD.</li>
+        <li><strong>Pure Random Walk</strong>: lacks drift term ⇒ polynomially slower search vs. SGD’s biased walk.</li>
+      </ul>
+    </section>
+
+    <!-- Design Lessons -->
+    <section>
+      <p class="big">Design Lessons Transferred to Machine Learning</p>
+      <ul class="small" style="margin-left:0.18in;">
+        <li><strong>Temperature Control:</strong> adapt η &amp; batch size like annealing schedules.</li>
+        <li><strong>Population Diversity:</strong> ensembles &amp; PBT mimic evolutionary breadth.</li>
+        <li><strong>Local+Global Signals:</strong> merge Hebbian locality with global error modulators (e.g. feedback alignment).</li>
+        <li><strong>Barrier Hopping:</strong> inject noise bursts / sharpness‑aware steps to exit narrow valleys.</li>
+        <li><strong>Energy‑Based Regularization:</strong> entropy‑SGD, SAM explicitly penalize sharp minima → echoes natural robustness.</li>
+      </ul>
+    </section>
+
+    <!-- References -->
+    <section id="refs">
+      <p class="med" style="font-size:10pt;margin-bottom:0.05in;">Selected References</p>
+      <p>[1] Cohen T. et al., <em>Edge of Stability</em>, NeurIPS 2021.</p>
+      <p>[2] Chaudhari P. et al., <em>Entropy‑SGD</em>, ICLR 2017.</p>
+      <p>[3] Friston K., <em>Free‑Energy Principle</em>, Nat. Rev. Neurosci. 2010.</p>
+      <p>[4] Lillicrap T. et al., <em>Backprop in the Brain</em>, Nat. Rev. Neurosci. 2020.</p>
+      <p>[5] Orr H.A., <em>Adaptation &amp; Fitness Landscapes</em>, Nat. Rev. Genet. 2005.</p>
+      <p>[6] Kryazhimskiy S., <em>Global Epistasis Makes Adaptation Predictable</em>, Science 2014.</p>
+      <p>[7] Izmailov P. et al., <em>SGD &amp; Flat Minima</em>, NeurIPS 2018.</p>
+      <p>[8] Fisher R.A., <em>Fundamental Theorem of Natural Selection</em>, 1930.</p>
+      <p>[9] Isomura T., Friston K., <em>Neural Cultures &amp; Free‑Energy Minimization</em>, eLife 2022.</p>
+      <p>[10] Schultz W., <em>Dopamine &amp; Reward Prediction Error</em>, Annu. Rev. Neurosci. 2016.</p>
+      <p>[11] Guerguiev J. et al., <em>Dendritic Credit Assignment</em>, PNAS 2017.</p>
+      <p>[12] Zwanzig R., <em>Diffusion in a Rough Potential</em>, PNAS 1988.</p>
+      <p>[13] Wolynes P., <em>Protein Folding Funnels</em>, Brookhaven Symp. 1995.</p>
+      <p>[14] Neupane K. et al., <em>Protein Folding Barriers</em>, Nat. Phys. 2016.</p>
+      <p>[15] Sohl‑Dickstein J. et al., <em>Nonequilibrium Thermodynamics for DL</em>, ICML 2015.</p>
+    </section>
+  </div>
+</body>
+</html>
