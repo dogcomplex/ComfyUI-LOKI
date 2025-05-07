@@ -46,6 +46,7 @@ html,body{margin:0;padding:0;height:100%;width:100%;font-family:"Helvetica Neue"
 .center-img {
   width:2.4in;
   height:2.4in;
+  min-width:2in;
   border:1.8px dashed #888;
   display:flex;
   align-items:center;
@@ -95,7 +96,7 @@ ul.small{margin:0;padding-left:1em;}
   <div id="poster">
     <h1>SGD in Nature:<br/>Close Analogues to AI Algorithms</h1>
     <p class="med" style="text-align:center;">Evidence that biological &amp; physical processes already exploit SGD‑like dynamics at an abstract level</p>
-    <p class="big">Thesis ▶ Stochastic Gradient Descent shares the same stochastic‑drift form that underlie <em>evolution</em>, <em>neural adaptation</em>, and <em>thermodynamic relaxation</em>.</p>
+    <p class="big">Stochastic Gradient Descent shares the same stochastic‑drift form that underlies <em>evolution</em>, <em>neural adaptation</em>, and <em>thermodynamic relaxation</em>.</p>
     <p class="small" style="text-align:center;">These natural algorithms showcase how noisy, local updates can reliably discover globally robust solutions in high‑dimensional landscapes.</p>
 
     <div class="columns">
@@ -107,10 +108,10 @@ ul.small{margin:0;padding-left:1em;}
               <li><strong>Gradient Source –</strong> Relative fitness selects allele changes that ascend the fitness gradient, on average, [5,6].</li>
               <li><strong>Noise –</strong> Mutation &amp; drift maintain exploration; large pop. ↔ small batch size trade‑off.</li>
               <li><strong>Flat Peaks –</strong> Broad adaptive plateaus are often found to dominate rugged genotypic spaces in many empirical systems, mirroring flat minima that generalize in DNNs [7].</li>
-              <li><strong>Formal link –</strong> Adaptive walk dynamics converge to SDE: dθ = +∇F·dt + √Σ·dWt (same form as SGD) [8].</li>
+              <li><strong>Formal link –</strong> Adaptive walk dynamics converge to SDE: dθ = ∇F·dt + √Σ·dWt (same form as SGD) [8].</li>
             </ul>
           </div>
-          <div class="center-img">Evolution Image</div>
+          <div class="center-img" aria-label="Schematic illustration of evolutionary landscape and adaptive walk">Evolution Image</div>
         </div>
         <div class="content-image-row">
           <div class="text-content">
@@ -122,19 +123,19 @@ ul.small{margin:0;padding-left:1em;}
               <li><strong>Credit Assignment –</strong> Approximated through dendritic segregation &amp; feedback pathways – biological "backprop" surrogates [11, 4].</li>
             </ul>
           </div>
-          <div class="center-img">Synapse Image</div>
+          <div class="center-img" aria-label="Schematic of a neuron synapse illustrating plasticity">Synapse Image</div>
         </div>
         <div class="content-image-row">
           <div class="text-content">
             <p class="med">3 ◆ Protein Folding & Over‑Damped Langevin Dynamics</p>
             <ul class="small">
-              <li><strong>Gradient Source –</strong> Conformational search obeys dX = −∇U·dt + √(2<i>β</i><sup>-1</sup> (<i>β</i>=1/kT))·dWt – identical SDE to SGD with <i>η</i>↔<i>β</i><sup>-1</sup> [12].</li>
+              <li><strong>Gradient Source –</strong> Conformational search obeys dX = −∇U·dt + √(2<i>β</i><sup>&minus;1</sup> (<i>β</i>=1/kT))·dWt – identical SDE to SGD with <i>η</i>↔<i>β</i><sup>&minus;1</sup> [12].</li>
               <li><strong>Landscape –</strong> Funnel‑shaped landscapes explain fast convergence despite astronomical state space – same empirical observation for over‑param nets [13, 16].</li>
               <li><strong>Temperature Scheduling –</strong> Simulated annealing &amp; cyclical learning‑rates both exploit temperature schedules to cross barriers.</li>
               <li><strong>Experiment –</strong> Single‑molecule folding trajectories exhibit barrier hopping rates matching SGD escape statistics [14].</li>
             </ul>
           </div>
-          <div class="center-img">Protein Funnel Image</div>
+          <div class="center-img" aria-label="Illustration of a protein folding energy funnel">Protein Funnel Image</div>
         </div>
       </div>
       <div class="column">
@@ -142,7 +143,7 @@ ul.small{margin:0;padding-left:1em;}
           <p class="med">◆ Nonequilibrium Thermodynamics of SGD</p>
           <ul class="small">
             <li><strong>Entropy Flow –</strong> SGD maintains a steady‑state entropy production: ⟨ΔS⟩ ≈ <i>η</i>·Var[g] (approx.) – obeys fluctuation theorems [15].</li>
-            <li><strong>Effective Temperature –</strong> Teff ∝ <i>η</i>·(Bfull/Bmini) links batch size to exploration radius.</li>
+            <li><strong>Effective Temperature –</strong> T<sub>eff</sub> ∝ <i>η</i>·(B<sub>full</sub>/B<sub>mini</sub>) links batch size to exploration radius.</li>
             <li><strong>Flatness –</strong> Flatter minima correlate with lower stationary entropy – predicting better generalization [1,2].</li>
           </ul>
         </div>
@@ -158,8 +159,7 @@ ul.small{margin:0;padding-left:1em;}
           <p class="med">◆ Design Lessons Transferred to Machine Learning</p>
           <ul class="small">
             <li><strong>Temperature Control –</strong> Adapt <i>η</i> &amp; batch size like annealing schedules.</li>
-            <li><strong>Population Diversity –</strong> Ensembles &amp; PBT mimic evolutionary breadth.</li>
-            <li><strong>Population‑based Hyperparameter Search –</strong> Leverages diversity for optimization.</li>
+            <li><strong>Population diversity –</strong> Ensembles, population‑based training (PBT) &amp; hyper‑param. search exploit evolutionary breadth.</li>
             <li><strong>Local+Global Signals –</strong> Merge Hebbian locality with global error modulators (e.g. feedback alignment).</li>
             <li><strong>Barrier Hopping –</strong> Inject noise bursts / sharpness‑aware steps to exit narrow valleys.</li>
             <li><strong>Energy‑Based Regularization –</strong> Entropy‑SGD, SAM explicitly penalize sharp minima → echoes natural robustness.</li>
@@ -175,24 +175,24 @@ ul.small{margin:0;padding-left:1em;}
 
     <section id="refs">
       <div class="ref-col">
-        <p>[1] Cohen T. et al., Edge of Stability, NeurIPS 2021.</p>
-        <p>[2] Chaudhari P. et al., Entropy‑SGD, ICLR 2017.</p>
-        <p>[3] Friston K., Free‑Energy Principle, Nat. Rev. Neurosci. 2010.</p>
-        <p>[4] Lillicrap T. et al., Backprop in the Brain, Nat. Rev. Neurosci. 2020.</p>
-        <p>[5] Orr H.A., Adaptation &amp; Fitness Landscapes, Nat. Rev. Genet. 2005.</p>
-        <p>[6] Kryazhimskiy S., Global Epistasis Makes Adaptation Predictable, Science 2014.</p>
-        <p>[7] Izmailov P. et al., SGD &amp; Flat Minima, NeurIPS 2018.</p>
+        <p>[1] Cohen T. et al., "Gradient Descent on Neural Networks Typically Occurs at the Edge of Stability", NeurIPS 2021.</p>
+        <p>[2] Chaudhari P. et al., "Entropy‑SGD: Biasing Gradient Descent Into Wide Valleys", ICLR 2017.</p>
+        <p>[3] Friston K., "The Free‑Energy Principle: A Unified Brain Theory?", Nat. Rev. Neurosci. 2010.</p>
+        <p>[4] Lillicrap T. et al., "Backpropagation and the Brain", Nat. Rev. Neurosci. 2020.</p>
+        <p>[5] Orr H.A., "The Genetic Theory of Adaptation: A Brief History", Nat. Rev. Genet. 2005.</p>
+        <p>[6] Kryazhimskiy S., "Global Epistasis Makes Adaptation Predictable Despite Sequence‑Level Stochasticity", Science 2014.</p>
+        <p>[7] Izmailov P. et al., "Averaging Weights Leads to Wider Optima and Better Generalization", NeurIPS 2018.</p>
+        <p>[8] Mustonen V., Lässig M. (2009) "From Fitness Landscapes to Seascapes: Non‑Equilibrium Dynamics of Selection and Adaptation". Trends Genet. 25 (3): 111–119.</p>
       </div>
       <div class="ref-col">
-        <p>[8] Mustonen V. &amp; Lässig M., Fitness landscapes and the predictability of evolution, PNAS 2009.</p>
-        <p>[9] Isomura T., Friston K., Neural Cultures &amp; Free‑Energy Minimization, eLife 2022.</p>
-        <p>[10] Schultz W., Dopamine &amp; Reward Prediction Error, Annu. Rev. Neurosci. 2016.</p>
-        <p>[11] Guerguiev J. et al., Dendritic Credit Assignment, PNAS 2017.</p>
-        <p>[12] Zwanzig R., Diffusion in a Rough Potential, PNAS 1988.</p>
-        <p>[13] Wolynes P., Protein Folding Funnels, Brookhaven Symp. 1995.</p>
-        <p>[14] Neupane K. et al., Protein Folding Barriers, Nat. Phys. 2016.</p>
-        <p>[15] Sohl‑Dickstein J. et al., Nonequilibrium Thermodynamics for DL, ICML 2015.</p>
-        <p>[16] Li H., Xu Z., Taylor G., Studer C., Goldstein T., Visualizing the Loss Landscape of Neural Nets, NeurIPS 2018.</p>
+        <p>[9] Isomura T., Friston K. (2018) "In Vitro Neural Networks Minimise Variational Free Energy". Sci. Rep. 8, 16532.</p>
+        <p>[10] Schultz W., "Dopamine Reward Prediction Error Coding", Annu. Rev. Neurosci. 2016.</p>
+        <p>[11] Guerguiev J. et al. (2017) "Towards Deep Learning with Segregated Dendrites". eLife 6:e22901.</p>
+        <p>[12] Zwanzig R., "Diffusion in a Rough Potential", PNAS 1988.</p>
+        <p>[13] Bryngelson & Wolynes, "Funnels, Pathways and the Energy Landscape of Protein Folding", Proc. Natl. Acad. Sci. 1995.</p>
+        <p>[14] Neupane K. et al., "Protein Folding Trajectories Can Be Described Quantitatively by 1‑D Diffusion…", Nature Physics 2016.</p>
+        <p>[15] Sohl‑Dickstein J. et al., "Deep Unsupervised Learning Using Nonequilibrium Thermodynamics", ICML 2015.</p>
+        <p>[16] Li H., Xu Z., Taylor G., Studer C., Goldstein T., "Visualizing the Loss Landscape of Neural Nets", NeurIPS 2018.</p>
       </div>
     </section>
   </div>
