@@ -2,6 +2,8 @@ import json
 import jmespath
 from playwright.sync_api import sync_playwright
 import argparse
+import os
+import sys
 from typing import Dict, List, Optional
 
 # --- Reusing parsing functions from twitter_scraper ---
@@ -263,20 +265,39 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Scrape a Twitter thread starting from a specific tweet URL.')
     parser.add_argument('url', type=str, help='The URL of the first tweet in the thread.')
     parser.add_argument('--max', type=int, default=10, help='Maximum number of tweets to scrape from the thread.')
-    parser.add_argument('--output', type=str, default='thread_output.json', help='File path to save the output JSON list.')
+    parser.add_argument('--output', type=str, default=None, help='Output file or directory. If a directory, a default filename is used.')
     parser.add_argument('--visible', action='store_true', help='Run the browser in visible mode.')
     args = parser.parse_args()
+
+    # Resolve output path: default to <node_folder>/output/thread_output.json
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_file = os.path.join(script_dir, 'output', 'thread_output.json')
+    output_arg = args.output
+    if output_arg is None:
+        resolved_output = default_file
+    else:
+        is_dir_like = os.path.isdir(output_arg) or output_arg.endswith(os.sep) or os.path.splitext(output_arg)[1] == ''
+        resolved_output = os.path.join(output_arg, 'thread_output.json') if is_dir_like else output_arg
+
+    try:
+        os.makedirs(os.path.dirname(resolved_output), exist_ok=True)
+    except Exception as e:
+        print(f"Error ensuring output directory exists for {resolved_output}: {e}")
+        sys.exit(1)
 
     print(f"Attempting to scrape thread from: {args.url} (max: {args.max})")
     scraped_thread = scrape_thread_data(args.url, max_tweets=args.max, headless=not args.visible)
 
     if scraped_thread:
-        print(f"Successfully scraped thread. Saving {len(scraped_thread)} tweets to {args.output}")
+        print(f"Successfully scraped thread. Saving {len(scraped_thread)} tweets to {resolved_output}")
         try:
-            with open(args.output, 'w', encoding='utf-8') as f:
+            with open(resolved_output, 'w', encoding='utf-8') as f:
                 json.dump(scraped_thread, f, ensure_ascii=False, indent=4)
             print("Output saved.")
+            sys.exit(0)
         except Exception as e:
-            print(f"Error saving output to {args.output}: {e}")
+            print(f"Error saving output to {resolved_output}: {e}")
+            sys.exit(1)
     else:
-        print("Thread scraping failed.") 
+        print("Thread scraping failed.")
+        sys.exit(1)

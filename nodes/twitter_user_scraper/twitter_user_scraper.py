@@ -2,6 +2,10 @@ import json
 import jmespath
 from playwright.sync_api import sync_playwright
 import argparse
+import os
+import sys
+import asyncio
+import re
 from typing import Dict, Optional, List, Tuple, Any
 
 # --- Reusing parsing function from twitter_scraper --- 
@@ -313,24 +317,218 @@ def scrape_user_profile_and_tweets(profile_url: str, max_tweets: int = 20, headl
         print(f"Could not find profile or initial tweets.")
         return None
 
+# --- Alternative Driver: twikit (async) ---
+def _extract_screen_name_from_url(profile_url: str) -> Optional[str]:
+    try:
+        # Remove protocol and query, split by '/' and pick first non-empty after domain
+        # Examples: https://x.com/someuser/, https://twitter.com/someuser
+        no_proto = re.sub(r'^https?://', '', profile_url).strip('/')
+        parts = no_proto.split('/')
+        if len(parts) >= 2:
+            # parts[0] is domain, parts[1] is screen name
+            screen_name = parts[1].split('?')[0].strip('@')
+            return screen_name or None
+        return None
+    except Exception:
+        return None
+
+async def _twikit_fetch_user_and_tweets_async(
+    profile_url: str,
+    max_tweets: int,
+    cookies_file: Optional[str],
+    username: Optional[str],
+    email: Optional[str],
+    password: Optional[str],
+    language: str = 'en-US',
+) -> Optional[Dict]:
+    try:
+        try:
+            from twikit import Client
+        except Exception as e:
+            print(f"twikit import failed: {e}. Please install twikit to use this driver.")
+            return None
+
+        client = Client(language)
+
+        # Prefer cookie-based auth if provided; else try credentials; else fail fast
+        if cookies_file and os.path.exists(cookies_file):
+            try:
+                await client.login(auth_info_1=username or '', auth_info_2=email or '', password=password or '', cookies_file=cookies_file)
+            except Exception as e:
+                print(f"twikit cookie login failed: {e}")
+                return None
+        elif username and (email or password):
+            try:
+                await client.login(auth_info_1=username, auth_info_2=email or username, password=password or '', cookies_file=cookies_file or 'twikit_cookies.json')
+            except Exception as e:
+                print(f"twikit credential login failed: {e}")
+                return None
+        else:
+            print("twikit requires cookies or credentials; none provided.")
+            return None
+
+        screen_name = _extract_screen_name_from_url(profile_url)
+        if not screen_name:
+            print(f"Could not extract screen name from URL: {profile_url}")
+            return None
+
+        try:
+            user = await client.get_user_by_screen_name(screen_name)
+        except Exception as e:
+            print(f"twikit get_user_by_screen_name failed: {e}")
+            return None
+
+        # Fetch tweets iteratively up to max_tweets
+        tweets: List[Any] = []
+        cursor: Optional[str] = None
+        try:
+            while len(tweets) < max_tweets:
+                batch = await user.get_tweets(limit=min(50, max_tweets - len(tweets)), cursor=cursor)
+                if not batch:
+                    break
+                tweets.extend(batch)
+                # Some twikit versions expose next cursor on the user object or batch; attempt to read
+                cursor = getattr(batch, 'next_cursor', None) or getattr(user, 'tweets_next_cursor', None)
+                if not cursor:
+                    if len(batch) == 0:
+                        break
+                    # If no cursor available, rely on limit to break
+        except Exception as e:
+            print(f"twikit get_tweets failed: {e}")
+            # Continue with what we have
+
+        # Map to LOKI output schema
+        def map_user_profile(u: Any) -> Dict:
+            profile: Dict[str, Any] = {}
+            profile["created_at"] = getattr(u, 'created_at', None)
+            profile["default_profile"] = None
+            profile["description"] = getattr(u, 'description', None)
+            profile["entities"] = None
+            profile["fast_followers_count"] = None
+            profile["favourites_count"] = getattr(u, 'favourites_count', None)
+            profile["followers_count"] = getattr(u, 'followers_count', None)
+            profile["friends_count"] = getattr(u, 'friends_count', None)
+            profile["has_custom_timelines"] = None
+            profile["is_translator"] = None
+            profile["listed_count"] = getattr(u, 'listed_count', None)
+            profile["location"] = getattr(u, 'location', None)
+            profile["media_count"] = getattr(u, 'media_count', None)
+            profile["name"] = getattr(u, 'name', None)
+            profile["normal_followers_count"] = None
+            profile["pinned_tweet_ids_str"] = None
+            profile["possibly_sensitive"] = None
+            profile["profile_banner_url"] = getattr(u, 'profile_banner_url', None)
+            profile["profile_image_url_https"] = getattr(u, 'profile_image_url', None)
+            profile["screen_name"] = getattr(u, 'screen_name', None)
+            profile["statuses_count"] = getattr(u, 'statuses_count', None)
+            profile["translator_type"] = None
+            profile["verified"] = getattr(u, 'verified', None)
+            profile["want_retweets"] = None
+            profile["withheld_in_countries"] = None
+            profile["id"] = getattr(u, 'id', None)
+            profile["rest_id"] = getattr(u, 'id', None)
+            profile["is_blue_verified"] = getattr(u, 'is_blue_verified', None)
+            return profile
+
+        url_regex = re.compile(r"https?://\S+")
+
+        def map_tweet(t: Any) -> Dict:
+            mapped: Dict[str, Any] = {}
+            mapped["created_at"] = getattr(t, 'created_at', None)
+            text_val = getattr(t, 'text', None)
+            mapped["text"] = text_val
+            mapped["attached_urls"] = getattr(t, 'urls', None) or (url_regex.findall(text_val) if isinstance(text_val, str) else [])
+            mapped["attached_urls2"] = []
+            mapped["attached_media"] = []
+            mapped["tagged_users"] = getattr(t, 'mentions', None) or []
+            mapped["tagged_hashtags"] = getattr(t, 'hashtags', None) or []
+            mapped["favorite_count"] = getattr(t, 'favorite_count', None) or getattr(t, 'favorite_count', None)
+            mapped["bookmark_count"] = getattr(t, 'bookmark_count', None)
+            mapped["quote_count"] = getattr(t, 'quote_count', None)
+            mapped["reply_count"] = getattr(t, 'reply_count', None)
+            mapped["retweet_count"] = getattr(t, 'retweet_count', None)
+            mapped["is_quote"] = getattr(t, 'is_quote', None)
+            mapped["is_retweet"] = getattr(t, 'is_retweet', None)
+            mapped["language"] = getattr(t, 'lang', None)
+            mapped["user_id"] = str(getattr(t, 'user_id', '') or getattr(getattr(t, 'user', None), 'id', ''))
+            mapped["id"] = str(getattr(t, 'id', ''))
+            mapped["conversation_id"] = str(getattr(t, 'conversation_id', ''))
+            mapped["source"] = getattr(t, 'source', None)
+            mapped["views"] = getattr(t, 'view_count', None)
+            mapped["poll"] = {}
+            # user nested
+            u = getattr(t, 'user', None)
+            mapped["user"] = map_user_profile(u) if u else {}
+            # normalize lists
+            for key in ["attached_urls", "attached_urls2", "attached_media", "tagged_users", "tagged_hashtags"]:
+                if mapped.get(key) is None:
+                    mapped[key] = []
+            return mapped
+
+        combined_result = {
+            "profile": map_user_profile(user),
+            "tweets": [map_tweet(t) for t in tweets[:max_tweets]],
+        }
+        print(f"twikit fetched tweets: {len(combined_result['tweets'])} (requested max: {max_tweets})")
+        return combined_result
+    except Exception as e:
+        print(f"twikit driver error: {e}")
+        return None
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Scrape public profile data and recent tweets from an X.com user URL.')
     parser.add_argument('url', type=str, help='The URL of the user profile to scrape.')
     parser.add_argument('--max_tweets', type=int, default=20, help='Maximum number of tweets to attempt to scrape.')
-    parser.add_argument('--output', type=str, default='user_profile_output.json', help='File path to save the output JSON.')
-    parser.add_argument('--visible', action='store_true', help='Run the browser in visible mode.')
+    parser.add_argument('--output', type=str, default=None, help='Output file or directory. If a directory, a default filename is used.')
+    parser.add_argument('--visible', action='store_true', help='Run the browser in visible mode (playwright driver).')
+    parser.add_argument('--driver', type=str, default='playwright', choices=['playwright', 'twikit'], help='Underlying scraper driver to use.')
+    # twikit options
+    parser.add_argument('--twikit_cookies', type=str, default=None, help='Path to twikit cookies.json file.')
+    parser.add_argument('--twikit_username', type=str, default=None, help='Username for twikit login (auth_info_1).')
+    parser.add_argument('--twikit_email', type=str, default=None, help='Email for twikit login (auth_info_2).')
+    parser.add_argument('--twikit_password', type=str, default=None, help='Password for twikit login.')
     args = parser.parse_args()
 
-    print(f"Attempting to scrape profile and up to {args.max_tweets} tweets: {args.url}")
-    scraped_data = scrape_user_profile_and_tweets(args.url, max_tweets=args.max_tweets, headless=not args.visible)
+    # Resolve output path: default to <node_folder>/output/user_profile_output.json
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_file = os.path.join(script_dir, 'output', 'user_profile_output.json')
+    output_arg = args.output
+    if output_arg is None:
+        resolved_output = default_file
+    else:
+        is_dir_like = os.path.isdir(output_arg) or output_arg.endswith(os.sep) or os.path.splitext(output_arg)[1] == ''
+        resolved_output = os.path.join(output_arg, 'user_profile_output.json') if is_dir_like else output_arg
+
+    try:
+        os.makedirs(os.path.dirname(resolved_output), exist_ok=True)
+    except Exception as e:
+        print(f"Error ensuring output directory exists for {resolved_output}: {e}")
+        sys.exit(1)
+
+    print(f"Attempting to scrape profile and up to {args.max_tweets} tweets: {args.url} (driver: {args.driver})")
+    if args.driver == 'playwright':
+        scraped_data = scrape_user_profile_and_tweets(args.url, max_tweets=args.max_tweets, headless=not args.visible)
+    else:
+        scraped_data = asyncio.run(_twikit_fetch_user_and_tweets_async(
+            args.url,
+            max_tweets=args.max_tweets,
+            cookies_file=args.twikit_cookies,
+            username=args.twikit_username,
+            email=args.twikit_email,
+            password=args.twikit_password,
+            language='en-US',
+        ))
 
     if scraped_data:
-        print(f"Successfully scraped data. Saving to {args.output}")
+        print(f"Successfully scraped data. Saving to {resolved_output}")
         try:
-            with open(args.output, 'w', encoding='utf-8') as f:
+            with open(resolved_output, 'w', encoding='utf-8') as f:
                 json.dump(scraped_data, f, ensure_ascii=False, indent=4)
             print("Output saved.")
+            sys.exit(0)
         except Exception as e:
-            print(f"Error saving output to {args.output}: {e}")
+            print(f"Error saving output to {resolved_output}: {e}")
+            sys.exit(1)
     else:
-        print("Profile and initial tweets scraping failed.") 
+        print("Profile and tweets scraping failed.")
+        sys.exit(1)

@@ -1,6 +1,6 @@
 import json
 from .twitter_thread_scraper import scrape_thread_data # Import from the thread scraper script
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 class TwitterThreadScraper:
     """ 

@@ -2,6 +2,8 @@ import json
 import jmespath
 from playwright.sync_api import sync_playwright
 import argparse
+import os
+import sys
 from typing import Dict, List
 
 # Jmespath parsing functions adapted from how_to.txt
@@ -231,20 +233,41 @@ def scrape_tweet_data(url: str, headless: bool = True) -> Dict | None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Scrape data from a single X.com (Twitter) tweet URL.')
     parser.add_argument('url', type=str, help='The URL of the tweet to scrape.')
-    parser.add_argument('--output', type=str, default='tweet_output.json', help='File path to save the output JSON.')
+    parser.add_argument('--output', type=str, default=None, help='Output file or directory. If a directory, a default filename is used.')
     parser.add_argument('--visible', action='store_true', help='Run the browser in visible mode (not headless).')
     args = parser.parse_args()
+
+    # Resolve output path: default to <node_folder>/output/tweet_output.json
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_file = os.path.join(script_dir, 'output', 'tweet_output.json')
+    output_arg = args.output
+    if output_arg is None:
+        resolved_output = default_file
+    else:
+        # If output is a directory (exists or ends with separator or has no extension), place default filename inside
+        is_dir_like = os.path.isdir(output_arg) or output_arg.endswith(os.sep) or os.path.splitext(output_arg)[1] == ''
+        resolved_output = os.path.join(output_arg, 'tweet_output.json') if is_dir_like else output_arg
+
+    # Ensure parent directory exists
+    try:
+        os.makedirs(os.path.dirname(resolved_output), exist_ok=True)
+    except Exception as e:
+        print(f"Error ensuring output directory exists for {resolved_output}: {e}")
+        sys.exit(1)
 
     print(f"Attempting to scrape: {args.url}")
     scraped_data = scrape_tweet_data(args.url, headless=not args.visible)
 
     if scraped_data:
-        print(f"Successfully scraped and parsed data. Saving to {args.output}")
+        print(f"Successfully scraped and parsed data. Saving to {resolved_output}")
         try:
-            with open(args.output, 'w', encoding='utf-8') as f:
+            with open(resolved_output, 'w', encoding='utf-8') as f:
                 json.dump(scraped_data, f, ensure_ascii=False, indent=4)
             print("Output saved.")
+            sys.exit(0)
         except Exception as e:
-            print(f"Error saving output to {args.output}: {e}")
+            print(f"Error saving output to {resolved_output}: {e}")
+            sys.exit(1)
     else:
-        print("Scraping failed.") 
+        print("Scraping failed.")
+        sys.exit(1)

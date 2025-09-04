@@ -4,4 +4,5 @@
 # Node Dependencies:
 playwright>=1.30.0 # For twitter_scraper, twitter_thread_scraper nodes
 jmespath>=1.0.0    # For twitter_scraper, twitter_thread_scraper nodes
+twikit>=2.1.2      # Optional: alternative driver for twitter_user_scraper
 # Add other node dependencies below
